@@ -48,7 +48,7 @@ export function DailyTradeIdea() {
         const result = await getLivePrice({ cryptocurrency: crypto });
         if (result && result.price) {
              setChartData(prevData => {
-                const newDataPoint = { time: Date.now(), price: result.price };
+                const newDataPoint = { time: Date.now(), price: result.price! };
                 const newData = [...prevData, newDataPoint];
                 return newData.length > 100 ? newData.slice(newData.length - 100) : newData;
             });
