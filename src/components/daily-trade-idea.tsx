@@ -51,6 +51,8 @@ export function DailyTradeIdea() {
   useEffect(() => {
     fetchIdea();
   }, []);
+  
+  const recommendationIsBuy = idea?.recommendation === 'buy';
 
   const chartData = idea
     ? [
@@ -62,7 +64,7 @@ export function DailyTradeIdea() {
   const chartConfig = {
     price: {
       label: 'Цена',
-      color: 'hsl(var(--primary))',
+      color: recommendationIsBuy ? 'hsl(var(--primary))' : 'hsl(var(--destructive))',
     },
   } satisfies ChartConfig;
 
@@ -80,7 +82,6 @@ export function DailyTradeIdea() {
     setProfit(calculatedProfit);
   }
 
-  const recommendationIsBuy = idea?.recommendation === 'buy';
   const profitPercentage = profit && idea ? (profit / (form.getValues('investment') || 1)) * 100 : 0;
 
 
@@ -130,7 +131,7 @@ export function DailyTradeIdea() {
                 </div>
                 
                  <div className="h-60 w-full">
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ChartContainer config={chartConfig} className="h-full w-full">
                         <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                             <defs>
                                 <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
@@ -141,10 +142,10 @@ export function DailyTradeIdea() {
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border) / 0.5)" />
                             <XAxis dataKey="label" axisLine={false} tickLine={false} />
                             <YAxis domain={['dataMin - 100', 'dataMax + 100']} hide />
-                            <Tooltip content={<ChartTooltipContent />} />
-                            <Area type="monotone" dataKey="price" stroke={recommendationIsBuy ? "hsl(var(--primary))" : "hsl(var(--destructive))"} fillOpacity={1} fill="url(#colorPrice)" />
+                            <Tooltip content={<ChartTooltipContent hideIndicator />} />
+                            <Area type="monotone" dataKey="price" stroke={chartConfig.price.color} fillOpacity={1} fill="url(#colorPrice)" />
                         </AreaChart>
-                    </ResponsiveContainer>
+                    </ChartContainer>
                 </div>
             </div>
             
