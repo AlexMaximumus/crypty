@@ -15,9 +15,14 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from './ui/input';
 import { Badge } from './ui/badge';
 import { cn } from '@/lib/utils';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
 const calculatorSchema = z.object({
   investment: z.coerce.number().positive('Сумма должна быть положительной'),
+});
+
+const ideaRequestSchema = z.object({
+  cryptocurrency: z.string(),
 });
 
 export function DailyTradeIdea() {
@@ -25,20 +30,21 @@ export function DailyTradeIdea() {
   const [idea, setIdea] = useState<DailyTradeIdeaOutput | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [profit, setProfit] = useState<number | null>(null);
+  const [selectedCrypto, setSelectedCrypto] = useState('BTC');
 
-  const form = useForm<z.infer<typeof calculatorSchema>>({
+  const calculatorForm = useForm<z.infer<typeof calculatorSchema>>({
     resolver: zodResolver(calculatorSchema),
     defaultValues: { investment: 1000 },
   });
 
-  const fetchIdea = async () => {
+  const fetchIdea = async (crypto: string) => {
     setIsLoading(true);
     setError(null);
     setIdea(null);
     setProfit(null);
-    form.reset({ investment: 1000 });
+    calculatorForm.reset({ investment: 1000 });
     try {
-      const response = await getDailyTradeIdea({});
+      const response = await getDailyTradeIdea({ cryptocurrency: crypto });
       setIdea(response);
     } catch (e) {
       setError('Не удалось получить торговую идею. Попробуйте обновить.');
@@ -49,8 +55,8 @@ export function DailyTradeIdea() {
   };
 
   useEffect(() => {
-    fetchIdea();
-  }, []);
+    fetchIdea(selectedCrypto);
+  }, [selectedCrypto]);
   
   const recommendationIsBuy = idea?.recommendation === 'buy';
 
@@ -82,19 +88,31 @@ export function DailyTradeIdea() {
     setProfit(calculatedProfit);
   }
 
-  const profitPercentage = profit && idea ? (profit / (form.getValues('investment') || 1)) * 100 : 0;
+  const profitPercentage = profit && idea ? (profit / (calculatorForm.getValues('investment') || 1)) * 100 : 0;
 
 
   return (
     <Card className="w-full">
-      <CardHeader className="flex flex-row items-center justify-between">
+      <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <CardTitle className="font-headline">Идея Дня</CardTitle>
-          <CardDescription>Актуальная торговая рекомендация от ИИ.</CardDescription>
+          <CardDescription>Актуальная торговая рекомендация от ИИ на основе рыночных данных.</CardDescription>
         </div>
-        <Button variant="ghost" size="icon" onClick={fetchIdea} disabled={isLoading}>
-          <RefreshCw className={cn('h-5 w-5', isLoading && 'animate-spin')} />
-        </Button>
+        <div className="flex items-center gap-2">
+            <Select value={selectedCrypto} onValueChange={setSelectedCrypto}>
+                <SelectTrigger className="w-[120px]">
+                    <SelectValue placeholder="Валюта" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="BTC">Bitcoin</SelectItem>
+                    <SelectItem value="ETH">Ethereum</SelectItem>
+                    <SelectItem value="SOL">Solana</SelectItem>
+                </SelectContent>
+            </Select>
+            <Button variant="ghost" size="icon" onClick={() => fetchIdea(selectedCrypto)} disabled={isLoading}>
+                <RefreshCw className={cn('h-5 w-5', isLoading && 'animate-spin')} />
+            </Button>
+        </div>
       </CardHeader>
       <CardContent className="grid gap-8 lg:grid-cols-2">
         {isLoading ? (
@@ -102,7 +120,10 @@ export function DailyTradeIdea() {
             <Loader2 className="h-10 w-10 animate-spin text-primary" />
           </div>
         ) : error ? (
-          <div className="text-destructive col-span-full">{error}</div>
+          <div className="text-destructive col-span-full flex flex-col items-center justify-center h-80">
+            <p>{error}</p>
+            <Button onClick={() => fetchIdea(selectedCrypto)} className="mt-4">Попробовать снова</Button>
+            </div>
         ) : idea && (
           <>
             <div className="space-y-6">
@@ -155,10 +176,10 @@ export function DailyTradeIdea() {
                     <h3 className="text-xl font-headline">Калькулятор Прибыли</h3>
                 </div>
 
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onCalculate)} className="space-y-4">
+                <Form {...calculatorForm}>
+                    <form onSubmit={calculatorForm.handleSubmit(onCalculate)} className="space-y-4">
                         <FormField
-                            control={form.control}
+                            control={calculatorForm.control}
                             name="investment"
                             render={({ field }) => (
                             <FormItem>

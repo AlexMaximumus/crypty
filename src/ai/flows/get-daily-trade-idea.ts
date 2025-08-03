@@ -9,10 +9,14 @@
  */
 
 import {ai} from '@/ai/genkit';
+import {getCryptoMarketData} from '@/ai/tools/crypto-data-tool';
 import {z} from 'genkit';
 
 const DailyTradeIdeaInputSchema = z.object({
-  // No input needed for this flow yet
+  cryptocurrency: z
+    .string()
+    .default('BTC')
+    .describe('The cryptocurrency to get a trade idea for (e.g., BTC, ETH).'),
 });
 export type DailyTradeIdeaInput = z.infer<typeof DailyTradeIdeaInputSchema>;
 
@@ -34,12 +38,14 @@ const prompt = ai.definePrompt({
   name: 'getDailyTradeIdeaPrompt',
   input: {schema: DailyTradeIdeaInputSchema},
   output: {schema: DailyTradeIdeaOutputSchema},
+  tools: [getCryptoMarketData],
   prompt: `You are an expert cryptocurrency analyst. Your task is to provide a single, actionable, and concrete trading idea for today.
   All responses must be in Russian.
   
-  Based on the current (simulated) market conditions, identify one cryptocurrency that has a high potential for a short-term move.
+  First, use the getCryptoMarketData tool to get the latest market data for the specified cryptocurrency.
+  Based on the retrieved market conditions, identify one cryptocurrency that has a high potential for a short-term move.
   Provide a clear "buy" or "sell" recommendation.
-  Specify a concrete entry price and a target price.
+  Specify a concrete entry price and a target price based on the data.
   Give a concise reasoning for your recommendation.
   Provide a confidence score between 0 and 1.
 
@@ -51,7 +57,7 @@ const prompt = ai.definePrompt({
   - Reasoning: "Цена BTC консолидируется выше ключевого уровня поддержки. Ожидается прорыв вверх на фоне позитивных новостей."
   - Confidence Score: 0.85
 
-  Generate a new, unique trading idea now.`,
+  Generate a new, unique trading idea for {{cryptocurrency}} now.`,
 });
 
 const getDailyTradeIdeaFlow = ai.defineFlow(
@@ -60,7 +66,7 @@ const getDailyTradeIdeaFlow = ai.defineFlow(
     inputSchema: DailyTradeIdeaInputSchema,
     outputSchema: DailyTradeIdeaOutputSchema,
   },
-  async (input) => {
+  async input => {
     const {output} = await prompt(input);
     return output!;
   }
