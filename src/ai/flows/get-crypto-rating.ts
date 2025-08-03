@@ -57,7 +57,7 @@ const prompt = ai.definePrompt({
   `,
 });
 
-const getCryptoRatingFlow = ai.defineFlow(
+export const getCryptoRatingFlow = ai.defineFlow(
   {
     name: 'getCryptoRatingFlow',
     inputSchema: CryptoRatingInputSchema,

@@ -114,7 +114,7 @@ function calculateSMA(data: any[], period: number) {
 }
 
 
-const getTechnicalAnalysisFlow = ai.defineFlow(
+export const getTechnicalAnalysisFlow = ai.defineFlow(
   {
     name: 'getTechnicalAnalysisFlow',
     inputSchema: TechnicalAnalysisInputSchema,

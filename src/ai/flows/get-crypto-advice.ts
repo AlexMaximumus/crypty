@@ -10,9 +10,9 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import { getDailyTradeIdea } from './get-daily-trade-idea';
-import { getCryptoRating } from './get-crypto-rating';
-import { getTechnicalAnalysis } from './get-technical-analysis';
+import { getDailyTradeIdeaFlow as getDailyTradeIdea } from './get-daily-trade-idea';
+import { getCryptoRatingFlow as getCryptoRating } from './get-crypto-rating';
+import { getTechnicalAnalysisFlow as getTechnicalAnalysis } from './get-technical-analysis';
 
 const GetCryptoAdviceInputSchema = z.object({
   query: z.string().describe('The user query about cryptocurrency trading, wallet setup, or fund management.'),

@@ -60,7 +60,7 @@ const prompt = ai.definePrompt({
   Generate a new, unique trading idea for {{cryptocurrency}} now.`,
 });
 
-const getDailyTradeIdeaFlow = ai.defineFlow(
+export const getDailyTradeIdeaFlow = ai.defineFlow(
   {
     name: 'getDailyTradeIdeaFlow',
     inputSchema: DailyTradeIdeaInputSchema,
