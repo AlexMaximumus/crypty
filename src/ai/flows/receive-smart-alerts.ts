@@ -1,4 +1,3 @@
-// src/ai/flows/receive-smart-alerts.ts
 'use server';
 
 /**
@@ -10,23 +9,16 @@
  */
 
 import {ai} from '@/ai/genkit';
+import { getCryptoMarketData } from '../tools/crypto-data-tool';
 import {z} from 'genkit';
 
 const SmartAlertsInputSchema = z.object({
-  marketAnalysis: z
-    .string()
-    .describe('The cryptocurrency market analysis data.'),
-  historicalData: z
-    .string()
-    .describe('Historical price and volume data for cryptocurrencies.'),
-  technicalIndicators: z
-    .string()
-    .describe('Technical indicators such as RSI, MACD, etc.'),
-  userData: z
-    .string()
-    .describe(
-      'The user preferences, risk tolerance, and trading history. in JSON format'
-    ),
+    cryptocurrency: z.string().describe('The cryptocurrency to get an alert for (e.g. BTC, ETH)'),
+    userData: z
+        .string()
+        .describe(
+        'The user preferences, risk tolerance, and trading history. in JSON format'
+        ),
 });
 export type SmartAlertsInput = z.infer<typeof SmartAlertsInputSchema>;
 
@@ -44,27 +36,6 @@ const SmartAlertsOutputSchema = z.object({
 });
 export type SmartAlertsOutput = z.infer<typeof SmartAlertsOutputSchema>;
 
-const analyzeDataSourceReliability = ai.defineTool({
-  name: 'analyzeDataSourceReliability',
-  description:
-    'Analyzes the reliability of data sources for cryptocurrency market data.',
-  inputSchema: z.object({
-    sourceName: z.string().describe('The name of the data source.'),
-    dataSample: z.string().describe('A sample of data from the source.'),
-  }),
-  outputSchema: z
-    .number()
-    .describe(
-      'A numerical score (0-1) representing the reliability of the data source.'
-    ),
-}, async (input) => {
-  // Mock implementation - replace with actual reliability analysis logic
-  console.log(
-    `Running analyzeDataSourceReliability tool with source ${input.sourceName}`
-  );
-  return Math.random(); // Return a random number for demonstration purposes
-});
-
 export async function receiveSmartAlerts(
   input: SmartAlertsInput
 ): Promise<SmartAlertsOutput> {
@@ -73,20 +44,20 @@ export async function receiveSmartAlerts(
 
 const smartAlertsPrompt = ai.definePrompt({
   name: 'smartAlertsPrompt',
-  tools: [analyzeDataSourceReliability],
-  input: {schema: SmartAlertsInputSchema},
+  tools: [getCryptoMarketData],
+  input: {schema: z.object({
+    cryptocurrency: z.string(),
+    marketData: z.string(),
+    userData: z.string(),
+  })},
   output: {schema: SmartAlertsOutputSchema},
   prompt: `You are an AI-powered cryptocurrency trading assistant.
 All responses must be in Russian.
 
-  Analyze the provided market data, historical data, technical indicators, and user data to generate smart alerts for potential profitable trades. Take into account the users risk tolerance. Be concise.
+  Analyze the provided real-time market data to generate a smart alert for a potential profitable trade in {{cryptocurrency}}. Take into account the user's risk tolerance from their user data. Be concise.
 
-  Market Analysis: {{{marketAnalysis}}}
-  Historical Data: {{{historicalData}}}
-  Technical Indicators: {{{technicalIndicators}}}
+  Real-time Market Data: {{{marketData}}}
   User Data: {{{userData}}}
-
-  Consider the reliability of data sources using the 'analyzeDataSourceReliability' tool.
 
   Provide an alert message with the cryptocurrency, suggested action (buy/sell), and rationale.
   Also, provide a confidence level (0-1) for the alert.
@@ -99,8 +70,14 @@ const receiveSmartAlertsFlow = ai.defineFlow(
     inputSchema: SmartAlertsInputSchema,
     outputSchema: SmartAlertsOutputSchema,
   },
-  async input => {
-    const {output} = await smartAlertsPrompt(input);
+  async (input) => {
+    const marketData = await getCryptoMarketData({ticker: input.cryptocurrency});
+    
+    const {output} = await smartAlertsPrompt({
+        ...input,
+        marketData: JSON.stringify(marketData, null, 2),
+    });
+
     return output!;
   }
 );

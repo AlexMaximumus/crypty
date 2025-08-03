@@ -10,17 +10,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Lightbulb, TrendingUp, TrendingDown } from 'lucide-react';
 import { Progress } from "@/components/ui/progress";
 
 const formSchema = z.object({
   cryptocurrency: z.string().min(1, "Выберите криптовалюту"),
   analysisType: z.enum(['buy', 'sell'], { required_error: "Выберите тип анализа" }),
-  historicalData: z.string().min(10, "Введите исторические данные"),
 });
-
-const exampleData = `Цены закрытия за последние 10 дней для BTC/USD: 67000, 68500, 68000, 69000, 71000, 70500, 72000, 71800, 72500, 73000. Объем торгов растет. Индекс RSI находится в зоне перекупленности.`;
 
 export function MarketAnalyzer() {
   const [isLoading, setIsLoading] = useState(false);
@@ -32,7 +28,6 @@ export function MarketAnalyzer() {
     defaultValues: {
       cryptocurrency: 'BTC',
       analysisType: 'buy',
-      historicalData: exampleData,
     },
   });
 
@@ -58,7 +53,7 @@ export function MarketAnalyzer() {
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <CardHeader>
               <CardTitle className="font-headline">Параметры Анализа</CardTitle>
-              <CardDescription>Заполните форму для получения рекомендации от ИИ.</CardDescription>
+              <CardDescription>Выберите криптовалюту и тип анализа. ИИ автоматически получит реальные рыночные данные и даст рекомендацию.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <FormField
@@ -96,19 +91,6 @@ export function MarketAnalyzer() {
                         <SelectItem value="sell">Продажа</SelectItem>
                       </SelectContent>
                     </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="historicalData"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Исторические данные (пример)</FormLabel>
-                    <FormControl>
-                      <Textarea placeholder="Введите данные о рынке..." {...field} rows={6} />
-                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

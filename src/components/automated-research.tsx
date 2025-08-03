@@ -10,25 +10,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Beaker, FileText, BarChart2, Link2, GitBranch, Smile, LineChart } from 'lucide-react';
 import { Progress } from "@/components/ui/progress";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 const formSchema = z.object({
   cryptocurrency: z.string().min(1, "Выберите криптовалюту"),
-  marketData: z.string().min(10, "Введите рыночные данные"),
-  onChainData: z.string().min(10, "Введите on-chain данные"),
-  technicalIndicators: z.string().min(10, "Введите технические индикаторы"),
-  sentimentMetrics: z.string().min(10, "Введите sentiment-метрики"),
 });
-
-const exampleData = {
-    marketData: 'Цена: $68,000, Объем (24ч): $45B, Глубина стакана (+-2%): $300M, OI: $15B, Funding Rate: 0.01%',
-    onChainData: 'Активные адреса: 900k, Новые адреса: 400k, Приток на биржи: 20k BTC, Отток: 25k BTC, MVRV-Z: 2.5',
-    technicalIndicators: 'RSI(14): 65, MACD: бычий, Bollinger Bands: цена у верхней границы, EMA(50) пересекла EMA(200) вверх.',
-    sentimentMetrics: 'Fear & Greed Index: 75 (Жадность), Twitter: умеренно-позитивный, Google Trends (BTC): рост на 15%',
-};
 
 export function AutomatedResearch() {
   const [isLoading, setIsLoading] = useState(false);
@@ -39,7 +27,6 @@ export function AutomatedResearch() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       cryptocurrency: 'BTC',
-      ...exampleData
     },
   });
 
@@ -65,7 +52,7 @@ export function AutomatedResearch() {
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <CardHeader>
               <CardTitle className="font-headline">Параметры Исследования</CardTitle>
-              <CardDescription>Заполните поля данными для анализа (используются примеры).</CardDescription>
+              <CardDescription>Выберите криптовалюту, для которой ИИ проведет автоматическое исследование на основе реальных рыночных данных.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <FormField
@@ -88,34 +75,6 @@ export function AutomatedResearch() {
                   </FormItem>
                 )}
               />
-              <FormField control={form.control} name="marketData" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Рыночные данные</FormLabel>
-                    <Textarea {...field} rows={3} />
-                    <FormMessage />
-                  </FormItem>
-              )} />
-              <FormField control={form.control} name="onChainData" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>On-chain данные</FormLabel>
-                    <Textarea {...field} rows={3} />
-                    <FormMessage />
-                  </FormItem>
-              )} />
-              <FormField control={form.control} name="technicalIndicators" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Технические индикаторы</FormLabel>
-                    <Textarea {...field} rows={3} />
-                    <FormMessage />
-                  </FormItem>
-              )} />
-              <FormField control={form.control} name="sentimentMetrics" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Sentiment-метрики</FormLabel>
-                    <Textarea {...field} rows={3} />
-                    <FormMessage />
-                  </FormItem>
-              )} />
             </CardContent>
             <CardFooter>
               <Button type="submit" disabled={isLoading} className="w-full">

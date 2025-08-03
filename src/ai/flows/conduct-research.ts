@@ -9,14 +9,11 @@
  */
 
 import {ai} from '@/ai/genkit';
+import { getCryptoMarketData } from '../tools/crypto-data-tool';
 import {z} from 'genkit';
 
 const ConductResearchInputSchema = z.object({
   cryptocurrency: z.string().describe('The cryptocurrency to analyze (e.g., BTC, ETH).'),
-  marketData: z.string().describe('Key market data including price, volume, order book depth, and open interest.'),
-  onChainData: z.string().describe('On-chain data like active addresses, transaction volume, and exchange flows.'),
-  technicalIndicators: z.string().describe('Technical indicators such as RSI, MACD, Bollinger Bands, and moving averages.'),
-  sentimentMetrics: z.string().describe('Sentiment metrics from social media, news, and Google Trends.'),
 });
 export type ConductResearchInput = z.infer<typeof ConductResearchInputSchema>;
 
@@ -37,19 +34,20 @@ export async function conductResearch(input: ConductResearchInput): Promise<Cond
 
 const prompt = ai.definePrompt({
   name: 'conductResearchPrompt',
-  input: {schema: ConductResearchInputSchema},
+  input: {schema: z.object({
+    cryptocurrency: z.string(),
+    marketData: z.string(),
+  })},
   output: {schema: ConductResearchOutputSchema},
-  prompt: `You are a professional cryptocurrency analyst. Your task is to conduct a comprehensive automated research for {{cryptocurrency}} based on the provided data. Structure your analysis into the following sections: Summary, Market Analysis, On-Chain Analysis, Technical Analysis, and Sentiment Analysis.
+  tools: [getCryptoMarketData],
+  prompt: `You are a professional cryptocurrency analyst. Your task is to conduct a comprehensive automated research for {{cryptocurrency}} based on the real-time data provided by the getCryptoMarketData tool. Structure your analysis into the following sections: Summary, Market Analysis, On-Chain Analysis, Technical Analysis, and Sentiment Analysis.
 All responses must be in Russian.
 
   Provide a clear trading recommendation (Buy, Sell, or Hold) and a confidence score. Be thorough, data-driven, and objective in your analysis.
 
-  Data Provided:
+  Data Provided by getCryptoMarketData tool:
   - Cryptocurrency: {{cryptocurrency}}
-  - Market Data: {{{marketData}}}
-  - On-Chain Data: {{{onChainData}}}
-  - Technical Indicators: {{{technicalIndicators}}}
-  - Sentiment Metrics: {{{sentimentMetrics}}}
+  - Real-time Data: {{{marketData}}}
 
   Generate a complete report.`,
 });
@@ -60,8 +58,13 @@ const conductResearchFlow = ai.defineFlow(
     inputSchema: ConductResearchInputSchema,
     outputSchema: ConductResearchOutputSchema,
   },
-  async input => {
-    const {output} = await prompt(input);
+  async (input) => {
+    const marketData = await getCryptoMarketData({ticker: input.cryptocurrency});
+
+    const {output} = await prompt({
+        ...input,
+        marketData: JSON.stringify(marketData, null, 2),
+    });
     return output!;
   }
 );
