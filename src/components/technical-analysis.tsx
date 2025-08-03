@@ -10,10 +10,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Lightbulb, TrendingUp, TrendingDown, MinusCircle, CandlestickChart } from 'lucide-react';
+import { Loader2, Lightbulb, TrendingUp, TrendingDown, MinusCircle, CandlestickChart as CandlestickChartIcon } from 'lucide-react';
 import { Progress } from "@/components/ui/progress";
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis, ReferenceLine } from 'recharts';
-import { ChartConfig, ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
+import { Bar, ComposedChart, CartesianGrid, Tooltip, XAxis, YAxis, ResponsiveContainer, Line } from 'recharts';
+import { ChartConfig } from '@/components/ui/chart';
 import { cn } from '@/lib/utils';
 
 const formSchema = z.object({
@@ -22,30 +22,39 @@ const formSchema = z.object({
 });
 
 type CandlestickProps = {
-    fill: string;
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-    low: number;
-    high: number;
-    open: number;
-    close: number;
+    fill?: string;
+    x?: number;
+    y?: number;
+    width?: number;
+    height?: number;
+    low?: number;
+    high?: number;
+    open?: number;
+    close?: number;
 };
   
 const Candlestick = (props: CandlestickProps) => {
     const { x, y, width, height, low, high, open, close } = props;
+    
+    if (x === undefined || y === undefined || width === undefined || height === undefined || open === undefined || close === undefined) {
+        return null;
+    }
+
     const isBullish = close > open;
-    const fill = isBullish ? 'hsl(var(--chart-2))' : 'hsl(var(--chart-1))';
-    const wickFill = isBullish ? 'hsl(var(--chart-2) / 0.5)' : 'hsl(var(--chart-1) / 0.5)';
-  
+    const color = isBullish ? 'hsl(var(--chart-2))' : 'hsl(var(--chart-1))';
+    const wickColor = isBullish ? 'hsl(var(--chart-2) / 0.7)' : 'hsl(var(--chart-1) / 0.7)';
+    
+    const yBody = isBullish ? y + height : y;
+    const heightBody = Math.abs(height);
+
     return (
-      <g stroke={fill} fill={fill} strokeWidth={1}>
-        <path
-          d={`M ${x + width / 2},${y} L ${x + width / 2},${y + height}`}
-          stroke={wickFill}
+      <g stroke={color} fill={color} strokeWidth={1}>
+         <path
+          d={`M ${x + width / 2} ${y} L ${x + width / 2} ${y + height}`}
+          stroke={wickColor}
+          strokeWidth={1}
         />
-        <rect x={x} y={y} width={width} height={height} fill={fill} />
+        <rect x={x} y={yBody} width={width} height={heightBody} fill={color} />
       </g>
     );
 };
@@ -171,7 +180,7 @@ export function TechnicalAnalysis() {
                     <div className="md:col-span-2 space-y-4">
                         <div className="h-[400px] w-full">
                             <ResponsiveContainer width="100%" height="100%">
-                                <ComposedChart data={result.candlestickData}>
+                                <ComposedChart data={result.candlestickData} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border) / 0.5)"/>
                                     <XAxis dataKey="timestamp" tickFormatter={(time) => new Date(time).toLocaleDateString()} hide/>
                                     <YAxis yAxisId="left" orientation="left" domain={['dataMin - (dataMax - dataMin) * 0.1', 'dataMax + (dataMax - dataMin) * 0.1']} hide />
@@ -180,7 +189,7 @@ export function TechnicalAnalysis() {
                                         if (active && payload && payload.length) {
                                             const data = payload[0].payload;
                                             return (
-                                                <div className="p-2 bg-background border rounded-lg shadow-lg">
+                                                <div className="p-2 bg-background/80 backdrop-blur-sm border rounded-lg shadow-lg">
                                                     <p className="text-sm text-muted-foreground">{new Date(data.timestamp).toLocaleString()}</p>
                                                     <p className="text-sm">Open: <span className="font-bold">{data.open.toFixed(2)}</span></p>
                                                     <p className="text-sm">High: <span className="font-bold">{data.high.toFixed(2)}</span></p>
@@ -194,13 +203,14 @@ export function TechnicalAnalysis() {
                                     }}/>
                                     <Bar dataKey="volume" yAxisId="right" fill="hsl(var(--muted-foreground) / 0.3)" barSize={10} />
                                     <Line
-                                        dataKey="close"
-                                        type="linear"
                                         yAxisId="left"
+                                        type="linear"
+                                        dataKey="close"
                                         strokeWidth={0}
                                         dot={false}
                                         activeDot={false}
-                                        shape={(props: any) => <Candlestick {...props} />}
+                                        // @ts-ignore
+                                        shape={(props) => <Candlestick {...props} />}
                                     />
                                 </ComposedChart>
                             </ResponsiveContainer>
@@ -232,7 +242,7 @@ export function TechnicalAnalysis() {
             </div>
           ) : (
             <div className="text-center text-muted-foreground flex flex-col items-center gap-3">
-                <CandlestickChart size={48} />
+                <CandlestickChartIcon size={48} />
                 <p>Ожидание параметров для технического анализа.</p>
             </div>
           )}

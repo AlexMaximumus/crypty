@@ -3,6 +3,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Button } from '@/components/ui/button';
 import { ArrowRight, BarChart, Bell, MessageCircle, BookOpen, FlaskConical, CandlestickChart } from 'lucide-react';
 import { DailyTradeIdea } from '@/components/daily-trade-idea';
+import { cn } from '@/lib/utils';
 
 const features = [
   {
@@ -15,7 +16,8 @@ const features = [
     title: "Технический Анализ",
     description: "Автоматический анализ свечных графиков и индикаторов.",
     href: "/technical-analysis",
-    icon: CandlestickChart
+    icon: CandlestickChart,
+    highlight: true,
   },
   {
     title: "Умные Оповещения",
@@ -55,23 +57,36 @@ export default function DashboardPage() {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {features.map((feature) => (
-          <Card key={feature.title} className="flex flex-col transition-all hover:border-primary/50 hover:shadow-lg">
-            <CardHeader className="flex flex-row items-center gap-4">
-                <div className="rounded-lg bg-primary/10 p-3 text-primary">
-                    <feature.icon className="h-6 w-6" />
-                </div>
-                <div>
-                    <CardTitle className="font-headline">{feature.title}</CardTitle>
-                    <CardDescription>{feature.description}</CardDescription>
-                </div>
-            </CardHeader>
-            <CardContent className="flex-grow flex items-end">
-              <Link href={feature.href} className="w-full">
-                <Button variant="outline" className="w-full">
-                  Перейти <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
-            </CardContent>
+          <Card key={feature.title} className={cn(
+            "flex flex-col transition-all hover:shadow-lg relative overflow-hidden",
+            feature.highlight ? "border-primary/50 bg-card" : "hover:border-primary/50"
+          )}>
+            {feature.highlight && (
+                <div 
+                    className="absolute inset-0 opacity-20"
+                    style={{
+                        background: 'radial-gradient(circle at 50% 0, hsl(var(--primary) / 0.5), transparent 70%)'
+                    }}
+                />
+            )}
+             <div className="relative z-10 flex flex-col flex-grow">
+                <CardHeader className="flex flex-row items-center gap-4">
+                    <div className={cn("rounded-lg p-3", feature.highlight ? "bg-primary/20 text-primary" : "bg-primary/10 text-primary")}>
+                        <feature.icon className="h-6 w-6" />
+                    </div>
+                    <div>
+                        <CardTitle className="font-headline">{feature.title}</CardTitle>
+                        <CardDescription>{feature.description}</CardDescription>
+                    </div>
+                </CardHeader>
+                <CardContent className="flex-grow flex items-end">
+                  <Link href={feature.href} className="w-full">
+                    <Button variant="outline" className="w-full bg-background/50 backdrop-blur-sm">
+                      Перейти <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </Link>
+                </CardContent>
+            </div>
           </Card>
         ))}
       </div>
