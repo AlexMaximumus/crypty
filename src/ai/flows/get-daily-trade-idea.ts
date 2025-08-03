@@ -32,26 +32,24 @@ export type DailyTradeIdeaOutput = z.infer<typeof DailyTradeIdeaOutputSchema>;
 
 const prompt = ai.definePrompt({
   name: 'getDailyTradeIdeaPrompt',
-  input: {schema: DailyTradeIdeaInputSchema},
+  input: {
+    schema: z.object({
+        cryptocurrency: z.string(),
+        marketData: z.string(),
+    }),
+  },
   output: {schema: DailyTradeIdeaOutputSchema},
-  tools: [getCryptoMarketData],
   prompt: `You are an expert cryptocurrency analyst. Your task is to provide a single, actionable, and concrete trading idea for today.
   All responses must be in Russian.
   
-  First, use the getCryptoMarketData tool to get the latest market data for the specified cryptocurrency.
   Based on the retrieved market conditions, identify one cryptocurrency that has a high potential for a short-term move.
   Provide a clear "buy" or "sell" recommendation.
   Specify a concrete entry price and a target price based on the data.
   Give a concise reasoning for your recommendation.
   Provide a confidence score between 0 and 1.
 
-  Example Output:
-  - Cryptocurrency: "BTC"
-  - Recommendation: "buy"
-  - Entry Price: 68500
-  - Target Price: 71000
-  - Reasoning: "Цена BTC консолидируется выше ключевого уровня поддержки. Ожидается прорыв вверх на фоне позитивных новостей."
-  - Confidence Score: 0.85
+  Market Data:
+  {{{marketData}}}
 
   Generate a new, unique trading idea for {{cryptocurrency}} now.`,
 });
@@ -63,8 +61,12 @@ export const getDailyTradeIdea = ai.defineTool(
     inputSchema: DailyTradeIdeaInputSchema,
     outputSchema: DailyTradeIdeaOutputSchema,
   },
-  async input => {
-    const {output} = await prompt(input);
+  async (input) => {
+    const marketData = await getCryptoMarketData({ticker: input.cryptocurrency});
+    const {output} = await prompt({
+        ...input,
+        marketData: JSON.stringify(marketData, null, 2),
+    });
     return output!;
   }
 );
