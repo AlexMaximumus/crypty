@@ -41,7 +41,7 @@ export function CryptoRating() {
 
     return (
         <div className="relative group">
-             <div className="absolute -inset-0.5 bg-gradient-to-r from-primary to-purple-600 rounded-lg blur-lg opacity-20 group-hover:opacity-50 transition duration-1000 group-hover:duration-200 animate-tilt"></div>
+             <div className="absolute -inset-0.5 bg-gradient-to-r from-primary to-purple-600 rounded-lg blur-lg opacity-20 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
             <Card className="relative">
                 <CardHeader>
                     <div className="flex items-center gap-3">
