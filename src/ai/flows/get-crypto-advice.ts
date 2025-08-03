@@ -10,9 +10,9 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import { getDailyTradeIdeaFlow as getDailyTradeIdea } from './get-daily-trade-idea';
-import { getCryptoRatingFlow as getCryptoRating } from './get-crypto-rating';
-import { getTechnicalAnalysisFlow as getTechnicalAnalysis } from './get-technical-analysis';
+import { getDailyTradeIdeaFlow } from './get-daily-trade-idea';
+import { getCryptoRatingFlow } from './get-crypto-rating';
+import { getTechnicalAnalysisFlow } from './get-technical-analysis';
 
 const GetCryptoAdviceInputSchema = z.object({
   query: z.string().describe('The user query about cryptocurrency trading, wallet setup, or fund management.'),
@@ -32,7 +32,7 @@ const prompt = ai.definePrompt({
   name: 'getCryptoAdvicePrompt',
   input: {schema: GetCryptoAdviceInputSchema},
   output: {schema: GetCryptoAdviceOutputSchema},
-  tools: [getDailyTradeIdea, getCryptoRating, getTechnicalAnalysis],
+  tools: [getDailyTradeIdeaFlow, getCryptoRatingFlow, getTechnicalAnalysisFlow],
   prompt: `You are a helpful and very powerful AI assistant specializing in cryptocurrency trading.
 All responses must be in Russian.
 
