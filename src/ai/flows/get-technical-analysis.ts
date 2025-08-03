@@ -47,11 +47,6 @@ const TechnicalAnalysisOutputSchema = z.object({
 });
 export type TechnicalAnalysisOutput = z.infer<typeof TechnicalAnalysisOutputSchema>;
 
-
-export async function getTechnicalAnalysis(input: TechnicalAnalysisInput): Promise<TechnicalAnalysisOutput> {
-  return getTechnicalAnalysisFlow(input);
-}
-
 const prompt = ai.definePrompt({
   name: 'technicalAnalysisPrompt',
   input: {
@@ -114,9 +109,10 @@ function calculateSMA(data: any[], period: number) {
 }
 
 
-export const getTechnicalAnalysisFlow = ai.defineFlow(
+export const getTechnicalAnalysis = ai.defineTool(
   {
-    name: 'getTechnicalAnalysisFlow',
+    name: 'getTechnicalAnalysis',
+    description: 'Performs automated technical analysis using candlestick data.',
     inputSchema: TechnicalAnalysisInputSchema,
     outputSchema: TechnicalAnalysisOutputSchema,
   },

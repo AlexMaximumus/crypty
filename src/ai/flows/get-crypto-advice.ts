@@ -10,9 +10,10 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import { getDailyTradeIdeaFlow } from './get-daily-trade-idea';
-import { getCryptoRatingFlow } from './get-crypto-rating';
-import { getTechnicalAnalysisFlow } from './get-technical-analysis';
+import { getDailyTradeIdea } from './get-daily-trade-idea';
+import { getCryptoRating } from './get-crypto-rating';
+import { getTechnicalAnalysis } from './get-technical-analysis';
+import { getCryptoMarketData, getCandlestickData } from '../tools/crypto-data-tool';
 
 const GetCryptoAdviceInputSchema = z.object({
   query: z.string().describe('The user query about cryptocurrency trading, wallet setup, or fund management.'),
@@ -32,7 +33,7 @@ const prompt = ai.definePrompt({
   name: 'getCryptoAdvicePrompt',
   input: {schema: GetCryptoAdviceInputSchema},
   output: {schema: GetCryptoAdviceOutputSchema},
-  tools: [getDailyTradeIdeaFlow, getCryptoRatingFlow, getTechnicalAnalysisFlow],
+  tools: [getCryptoMarketData, getCandlestickData, getDailyTradeIdea, getCryptoRating, getTechnicalAnalysis],
   prompt: `You are a helpful and very powerful AI assistant specializing in cryptocurrency trading.
 All responses must be in Russian.
 
@@ -43,6 +44,7 @@ When a user asks for a recommendation, a trade idea, or a direct question like "
 - If asked for a "trade idea", use the getDailyTradeIdea tool.
 - If asked for a comparison or "rating", use the getCryptoRating tool.
 - If asked for "technical analysis", use the getTechnicalAnalysis tool.
+- For other complex queries, you can use getCryptoMarketData or getCandlestickData to fetch raw data and perform your own analysis before answering.
 
 Base your final response on the output of the tools.
 

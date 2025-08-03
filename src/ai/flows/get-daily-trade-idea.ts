@@ -30,10 +30,6 @@ const DailyTradeIdeaOutputSchema = z.object({
 });
 export type DailyTradeIdeaOutput = z.infer<typeof DailyTradeIdeaOutputSchema>;
 
-export async function getDailyTradeIdea(input: DailyTradeIdeaInput): Promise<DailyTradeIdeaOutput> {
-  return getDailyTradeIdeaFlow(input);
-}
-
 const prompt = ai.definePrompt({
   name: 'getDailyTradeIdeaPrompt',
   input: {schema: DailyTradeIdeaInputSchema},
@@ -60,9 +56,10 @@ const prompt = ai.definePrompt({
   Generate a new, unique trading idea for {{cryptocurrency}} now.`,
 });
 
-export const getDailyTradeIdeaFlow = ai.defineFlow(
+export const getDailyTradeIdea = ai.defineTool(
   {
-    name: 'getDailyTradeIdeaFlow',
+    name: 'getDailyTradeIdea',
+    description: 'Provides a daily cryptocurrency trading idea.',
     inputSchema: DailyTradeIdeaInputSchema,
     outputSchema: DailyTradeIdeaOutputSchema,
   },

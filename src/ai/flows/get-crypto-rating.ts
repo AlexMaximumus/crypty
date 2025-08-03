@@ -13,7 +13,7 @@ import {getCryptoMarketData, type CryptoMarketData} from '@/ai/tools/crypto-data
 import {z} from 'genkit';
 
 const CryptoRatingInputSchema = z.object({
-  cryptocurrencies: z.array(z.string()).default(['BTC', 'ETH', 'SOL', 'XRP', 'DOGE']).describe('The cryptocurrencies to get a rating for (e.g., BTC, ETH).'),
+  cryptocurrencies: z.array(z.string()).describe('The cryptocurrencies to get a rating for (e.g., BTC, ETH).'),
 });
 export type CryptoRatingInput = z.infer<typeof CryptoRatingInputSchema>;
 
@@ -31,9 +31,6 @@ const CryptoRatingOutputSchema = z.object({
 });
 export type CryptoRatingOutput = z.infer<typeof CryptoRatingOutputSchema>;
 
-export async function getCryptoRating(input: CryptoRatingInput): Promise<CryptoRatingOutput> {
-  return getCryptoRatingFlow(input);
-}
 
 const prompt = ai.definePrompt({
   name: 'getCryptoRatingPrompt',
@@ -57,9 +54,10 @@ const prompt = ai.definePrompt({
   `,
 });
 
-export const getCryptoRatingFlow = ai.defineFlow(
+export const getCryptoRating = ai.defineTool(
   {
-    name: 'getCryptoRatingFlow',
+    name: 'getCryptoRating',
+    description: 'Provides a comparative rating of multiple cryptocurrencies.',
     inputSchema: CryptoRatingInputSchema,
     outputSchema: CryptoRatingOutputSchema,
   },
