@@ -12,8 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Lightbulb, TrendingUp, TrendingDown, MinusCircle, CandlestickChart as CandlestickChartIcon } from 'lucide-react';
 import { Progress } from "@/components/ui/progress";
-import { Bar, ComposedChart, CartesianGrid, Tooltip, XAxis, YAxis, ResponsiveContainer, Line, ReferenceLine, Label } from 'recharts';
-import { ChartConfig } from '@/components/ui/chart';
+import { ComposedChart, CartesianGrid, Tooltip, XAxis, YAxis, ResponsiveContainer, Line, ReferenceLine, Label, Bar } from 'recharts';
 import { cn } from '@/lib/utils';
 
 const formSchema = z.object({
@@ -36,24 +35,22 @@ type CandlestickProps = {
 const Candlestick = (props: CandlestickProps) => {
     const { x, y, width, height, low, high, open, close } = props;
     
-    if (x === undefined || y === undefined || width === undefined || height === undefined || open === undefined || close === undefined) {
+    if (x === undefined || y === undefined || width === undefined || height === undefined || open === undefined || close === undefined || low === undefined || high === undefined) {
         return null;
     }
 
-    const isBullish = close > open;
+    const isBullish = close >= open;
     const color = isBullish ? 'hsl(var(--chart-2))' : 'hsl(var(--chart-1))';
-    const wickColor = isBullish ? 'hsl(var(--chart-2) / 0.7)' : 'hsl(var(--chart-1) / 0.7)';
     
-    const yBody = isBullish ? y + height : y;
-    const heightBody = Math.abs(height);
+    // Y-coordinate for the body depends on whether it's bullish or bearish
+    const yBody = isBullish ? y + (open - close) : y;
+    const heightBody = Math.max(1, Math.abs(open-close));
 
     return (
-      <g stroke={color} fill={color} strokeWidth={1}>
-         <path
-          d={`M ${x + width / 2} ${y} L ${x + width / 2} ${y + height}`}
-          stroke={wickColor}
-          strokeWidth={1}
-        />
+      <g strokeWidth={1}>
+        {/* Wick */}
+        <line x1={x + width / 2} y1={y + (open - high)} x2={x + width / 2} y2={y + (open - low)} stroke={color} />
+        {/* Body */}
         <rect x={x} y={yBody} width={width} height={heightBody} fill={color} />
       </g>
     );
@@ -79,7 +76,12 @@ export function TechnicalAnalysis() {
     setError(null);
     try {
       const response = await getTechnicalAnalysis(values);
-      setResult(response);
+      // Remap data for chart
+      const chartData = response.candlestickData.map(d => ({
+          ...d,
+          ohlc: [d.open, d.high, d.low, d.close],
+      }));
+      setResult({ ...response, candlestickData: chartData });
     } catch (e) {
       setError("Не удалось провести технический анализ. Попробуйте позже.");
       console.error(e);
@@ -90,16 +92,6 @@ export function TechnicalAnalysis() {
   
   const recommendationIsBuy = result?.recommendation === 'Buy';
   const recommendationIsSell = result?.recommendation === 'Sell';
-
-  const chartConfig = {
-    price: {
-        label: 'Цена',
-    },
-    volume: {
-        label: 'Объем',
-        color: 'hsl(var(--muted-foreground) / 0.3)',
-    }
-  } satisfies ChartConfig;
 
   return (
     <div className="grid gap-6">
@@ -175,78 +167,90 @@ export function TechnicalAnalysis() {
           ) : error ? (
             <p className="text-destructive">{error}</p>
           ) : result ? (
-            <div className="w-full space-y-6">
-                <div className="grid gap-6 md:grid-cols-3">
-                    <div className="md:col-span-2 space-y-4">
-                        <div className="h-[400px] w-full">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <ComposedChart data={result.candlestickData} margin={{ top: 20, right: 60, bottom: 20, left: 20 }}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border) / 0.5)"/>
-                                    <XAxis dataKey="timestamp" tickFormatter={(time) => new Date(time).toLocaleDateString()} hide/>
-                                    <YAxis yAxisId="left" orientation="left" domain={['dataMin - (dataMax - dataMin) * 0.1', 'dataMax + (dataMax - dataMin) * 0.1']} hide />
-                                    <YAxis yAxisId="right" orientation="right" domain={['dataMin', 'dataMax * 5']} hide />
-                                    <Tooltip content={({ active, payload }) => {
-                                        if (active && payload && payload.length) {
-                                            const data = payload[0].payload;
-                                            return (
-                                                <div className="p-2 bg-background/80 backdrop-blur-sm border rounded-lg shadow-lg">
-                                                    <p className="text-sm text-muted-foreground">{new Date(data.timestamp).toLocaleString()}</p>
-                                                    <p className="text-sm">Open: <span className="font-bold">{data.open.toFixed(2)}</span></p>
-                                                    <p className="text-sm">High: <span className="font-bold">{data.high.toFixed(2)}</span></p>
-                                                    <p className="text-sm">Low: <span className="font-bold">{data.low.toFixed(2)}</span></p>
-                                                    <p className="text-sm">Close: <span className="font-bold">{data.close.toFixed(2)}</span></p>
-                                                    <p className="text-sm">Volume: <span className="font-bold">{data.volume.toFixed(2)}</span></p>
-                                                </div>
-                                            );
-                                        }
-                                        return null;
-                                    }}/>
-                                    <Bar dataKey="volume" yAxisId="right" fill="hsl(var(--muted-foreground) / 0.3)" barSize={10} />
-                                    <Line
-                                        yAxisId="left"
-                                        type="linear"
-                                        dataKey="close"
-                                        strokeWidth={0}
-                                        dot={false}
-                                        activeDot={false}
-                                        // @ts-ignore
-                                        shape={(props) => <Candlestick {...props} />}
-                                    />
-                                    {result.supportLevel && (
-                                        <ReferenceLine y={result.supportLevel} yAxisId="left" stroke="hsl(var(--chart-2))" strokeWidth={2} strokeDasharray="3 3">
-                                            <Label value={`Поддержка: ${result.supportLevel.toFixed(2)}`} position="right" fill="hsl(var(--chart-2))" fontSize={12} />
-                                        </ReferenceLine>
-                                    )}
-                                    {result.resistanceLevel && (
-                                        <ReferenceLine y={result.resistanceLevel} yAxisId="left" stroke="hsl(var(--chart-1))" strokeWidth={2} strokeDasharray="3 3">
-                                            <Label value={`Сопротивление: ${result.resistanceLevel.toFixed(2)}`} position="right" fill="hsl(var(--chart-1))" fontSize={12} />
-                                        </ReferenceLine>
-                                    )}
-                                </ComposedChart>
-                            </ResponsiveContainer>
-                        </div>
+            <div className="w-full grid gap-8 lg:grid-cols-3">
+                <div className="lg:col-span-2 h-[450px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <ComposedChart data={result.candlestickData} margin={{ top: 20, right: 20, bottom: 60, left: 20 }}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border) / 0.5)"/>
+                             <XAxis 
+                                dataKey="timestamp" 
+                                tickFormatter={(time) => new Date(time).toLocaleDateString()}
+                                angle={-45}
+                                textAnchor="end"
+                                height={60}
+                                interval="preserveStartEnd"
+                                tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+                            />
+                            <YAxis 
+                                yAxisId="left" 
+                                orientation="left" 
+                                domain={['dataMin - (dataMax - dataMin) * 0.1', 'dataMax + (dataMax - dataMin) * 0.1']} 
+                                tickFormatter={(value) => `$${Number(value).toLocaleString()}`}
+                                tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+                                width={80}
+                            />
+                            <YAxis yAxisId="right" orientation="right" domain={['dataMin', 'dataMax * 5']} hide />
+                            <Tooltip content={({ active, payload }) => {
+                                if (active && payload && payload.length) {
+                                    const data = payload[0].payload;
+                                    return (
+                                        <div className="p-2 bg-background/80 backdrop-blur-sm border rounded-lg shadow-lg text-sm">
+                                            <p className="text-muted-foreground">{new Date(data.timestamp).toLocaleString()}</p>
+                                            <p>Open: <span className="font-bold text-foreground">${data.open.toFixed(2)}</span></p>
+                                            <p>High: <span className="font-bold text-green-400">${data.high.toFixed(2)}</span></p>
+                                            <p>Low: <span className="font-bold text-red-400">${data.low.toFixed(2)}</span></p>
+                                            <p>Close: <span className="font-bold text-foreground">${data.close.toFixed(2)}</span></p>
+                                            <p>Volume: <span className="font-bold text-foreground">{Number(data.volume).toFixed(2)}</span></p>
+                                        </div>
+                                    );
+                                }
+                                return null;
+                            }}/>
+                             <Bar dataKey="volume" yAxisId="right" fill="hsl(var(--muted-foreground) / 0.3)" barSize={10} />
+                            <Line
+                                yAxisId="left"
+                                type="linear"
+                                dataKey="ohlc"
+                                strokeWidth={0}
+                                isAnimationActive={false}
+                                dot={false}
+                                activeDot={false}
+                                // @ts-ignore
+                                shape={(props) => <Candlestick {...props} />}
+                            />
+                            {result.supportLevel && (
+                                <ReferenceLine y={result.supportLevel} yAxisId="left" stroke="hsl(var(--chart-2))" strokeWidth={2} strokeDasharray="3 3">
+                                    <Label value={`Поддержка: ${result.supportLevel.toFixed(2)}`} position="insideTopRight" fill="hsl(var(--chart-2))" fontSize={12} className="font-bold" />
+                                </ReferenceLine>
+                            )}
+                            {result.resistanceLevel && (
+                                <ReferenceLine y={result.resistanceLevel} yAxisId="left" stroke="hsl(var(--chart-1))" strokeWidth={2} strokeDasharray="3 3">
+                                    <Label value={`Сопротивление: ${result.resistanceLevel.toFixed(2)}`} position="insideTopRight" fill="hsl(var(--chart-1))" fontSize={12} className="font-bold" />
+                                </ReferenceLine>
+                            )}
+                        </ComposedChart>
+                    </ResponsiveContainer>
+                </div>
+                <div className="space-y-6">
+                     <div className={cn('flex items-center gap-3 rounded-lg p-4 text-xl font-bold', 
+                        recommendationIsBuy && 'bg-green-500/10 text-green-400',
+                        recommendationIsSell && 'bg-red-500/10 text-red-400',
+                        !recommendationIsBuy && !recommendationIsSell && 'bg-yellow-500/10 text-yellow-400'
+                     )}>
+                        {recommendationIsBuy && <TrendingUp className="h-7 w-7"/>}
+                        {recommendationIsSell && <TrendingDown className="h-7 w-7"/>}
+                        {!recommendationIsBuy && !recommendationIsSell && <MinusCircle className="h-7 w-7"/>}
+                        <span>{result.recommendation}</span>
                     </div>
-                    <div className="space-y-4">
-                         <div className={cn('flex items-center gap-3 rounded-lg p-4 text-lg font-bold', 
-                            recommendationIsBuy && 'bg-green-500/10 text-green-400',
-                            recommendationIsSell && 'bg-red-500/10 text-red-400',
-                            !recommendationIsBuy && !recommendationIsSell && 'bg-yellow-500/10 text-yellow-400'
-                         )}>
-                            {recommendationIsBuy && <TrendingUp className="h-6 w-6"/>}
-                            {recommendationIsSell && <TrendingDown className="h-6 w-6"/>}
-                            {!recommendationIsBuy && !recommendationIsSell && <MinusCircle className="h-6 w-6"/>}
-                            <span>{result.recommendation}</span>
-                        </div>
 
-                        <div>
-                            <h3 className="font-semibold mb-2">Уверенность: {Math.round(result.confidenceScore * 100)}%</h3>
-                            <Progress value={result.confidenceScore * 100} />
-                        </div>
+                    <div className="space-y-2">
+                        <h3 className="font-semibold text-muted-foreground">Уверенность: {Math.round(result.confidenceScore * 100)}%</h3>
+                        <Progress value={result.confidenceScore * 100} className="h-2" />
+                    </div>
 
-                        <div>
-                            <h3 className="font-semibold mb-2 flex items-center gap-2"><Lightbulb className="h-5 w-5 text-yellow-400" /> Обоснование</h3>
-                            <p className="text-sm text-muted-foreground max-h-60 overflow-y-auto">{result.reasoning}</p>
-                        </div>
+                    <div className="space-y-2">
+                        <h3 className="font-semibold flex items-center gap-2 text-muted-foreground"><Lightbulb className="h-5 w-5 text-yellow-400" /> Обоснование ИИ</h3>
+                        <p className="text-sm text-foreground bg-muted/50 p-3 rounded-md max-h-60 overflow-y-auto">{result.reasoning}</p>
                     </div>
                 </div>
             </div>
