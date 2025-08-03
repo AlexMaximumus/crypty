@@ -7,3 +7,4 @@ import '@/ai/flows/receive-smart-alerts.ts';
 import '@/ai/flows/conduct-research.ts';
 import '@/ai/flows/get-daily-trade-idea.ts';
 import '@/ai/tools/crypto-data-tool.ts';
+import '@/ai/flows/get-live-price.ts';

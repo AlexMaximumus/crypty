@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { getDailyTradeIdea, type DailyTradeIdeaOutput } from '@/ai/flows/get-daily-trade-idea';
+import { getLivePrice } from '@/ai/flows/get-live-price';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -33,51 +34,32 @@ export function DailyTradeIdea() {
   const [profit, setProfit] = useState<number | null>(null);
   const [selectedCrypto, setSelectedCrypto] = useState('BTC');
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
-  const ws = useRef<WebSocket | null>(null);
+  
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
 
   const calculatorForm = useForm<z.infer<typeof calculatorSchema>>({
     resolver: zodResolver(calculatorSchema),
     defaultValues: { investment: 1000 },
   });
 
-  const setupWebSocket = useCallback((crypto: string) => {
-    // Close previous connection if it exists
-    if (ws.current) {
-        ws.current.close();
-    }
-
-    const streamName = `${crypto.toLowerCase()}usdt@trade`;
-    const socket = new WebSocket(`wss://stream.binance.com:443/ws/${streamName}`);
-
-    socket.onopen = () => {
-      console.log(`WebSocket connected to ${streamName}`);
-    };
-
-    socket.onmessage = (event) => {
-        const message = JSON.parse(event.data);
-        if (message.e === 'trade' && message.p) {
-            const newPrice = parseFloat(message.p);
-            setChartData(prevData => {
-                const newDataPoint = { time: Date.now(), price: newPrice };
+  const fetchLivePrice = useCallback(async (crypto: string) => {
+    try {
+        const result = await getLivePrice({ cryptocurrency: crypto });
+        if (result && result.price) {
+             setChartData(prevData => {
+                const newDataPoint = { time: Date.now(), price: result.price };
                 const newData = [...prevData, newDataPoint];
                 return newData.length > 100 ? newData.slice(newData.length - 100) : newData;
             });
         }
-    };
-
-    socket.onerror = (error) => {
-        console.error('WebSocket error:', error);
-        setError('Ошибка подключения к данным в реальном времени.');
-    };
-
-    socket.onclose = () => {
-        console.log('WebSocket disconnected');
-    };
-    
-    ws.current = socket;
-
+    } catch (e) {
+        console.error("Could not fetch live price", e);
+        if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+        }
+    }
   }, []);
-
 
   const fetchIdea = useCallback(async (crypto: string) => {
     setIsLoading(true);
@@ -85,35 +67,36 @@ export function DailyTradeIdea() {
     setIdea(null);
     setProfit(null);
     calculatorForm.reset({ investment: 1000 });
-    
-    // Close existing WebSocket connection
-    if (ws.current) {
-        ws.current.close();
-        ws.current = null;
+
+    if (intervalRef.current) {
+        clearInterval(intervalRef.current);
     }
     setChartData([]);
 
     try {
       const response = await getDailyTradeIdea({ cryptocurrency: crypto });
       setIdea(response);
-      // Initialize chart with the entry price
       setChartData([{ time: Date.now(), price: response.entryPrice }]);
-      // Setup new WebSocket connection
-      setupWebSocket(crypto);
+      
+      // Start fetching live price
+      intervalRef.current = setInterval(() => {
+          fetchLivePrice(crypto)
+      }, 1000);
+
     } catch (e) {
       setError('Не удалось получить торговую идею. Попробуйте обновить.');
       console.error(e);
     } finally {
       setIsLoading(false);
     }
-  }, [calculatorForm, setupWebSocket]);
+  }, [calculatorForm, fetchLivePrice]);
 
   useEffect(() => {
     fetchIdea(selectedCrypto);
 
     return () => {
-        if (ws.current) {
-            ws.current.close();
+        if (intervalRef.current) {
+            clearInterval(intervalRef.current);
         }
     };
   }, [selectedCrypto, fetchIdea]);
