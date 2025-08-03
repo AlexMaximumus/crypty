@@ -38,6 +38,7 @@ const analyzeMarketTrendsPrompt = ai.definePrompt({
   input: {schema: AnalyzeMarketTrendsInputSchema},
   output: {schema: AnalyzeMarketTrendsOutputSchema},
   prompt: `You are an AI cryptocurrency market analyst. Analyze the provided historical data for {{cryptocurrency}} and provide a recommendation on whether to buy or sell. Justify your recommendation with clear reasoning and provide a confidence score between 0 and 1.
+All responses must be in Russian.
 
 Analysis Type: {{analysisType}}
 Historical Data: {{historicalData}}`,

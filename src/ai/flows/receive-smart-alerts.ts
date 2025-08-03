@@ -77,6 +77,7 @@ const smartAlertsPrompt = ai.definePrompt({
   input: {schema: SmartAlertsInputSchema},
   output: {schema: SmartAlertsOutputSchema},
   prompt: `You are an AI-powered cryptocurrency trading assistant.
+All responses must be in Russian.
 
   Analyze the provided market data, historical data, technical indicators, and user data to generate smart alerts for potential profitable trades. Take into account the users risk tolerance. Be concise.
 

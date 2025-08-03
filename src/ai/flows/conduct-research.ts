@@ -40,6 +40,7 @@ const prompt = ai.definePrompt({
   input: {schema: ConductResearchInputSchema},
   output: {schema: ConductResearchOutputSchema},
   prompt: `You are a professional cryptocurrency analyst. Your task is to conduct a comprehensive automated research for {{cryptocurrency}} based on the provided data. Structure your analysis into the following sections: Summary, Market Analysis, On-Chain Analysis, Technical Analysis, and Sentiment Analysis.
+All responses must be in Russian.
 
   Provide a clear trading recommendation (Buy, Sell, or Hold) and a confidence score. Be thorough, data-driven, and objective in your analysis.
 

@@ -30,6 +30,7 @@ const prompt = ai.definePrompt({
   input: {schema: GetCryptoAdviceInputSchema},
   output: {schema: GetCryptoAdviceOutputSchema},
   prompt: `You are a helpful AI assistant specializing in cryptocurrency trading, wallet setup, and fund management.
+All responses must be in Russian.
 
   Provide clear, concise, and accurate advice based on the user's query.
 
