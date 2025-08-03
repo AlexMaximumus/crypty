@@ -9,3 +9,4 @@ import '@/ai/flows/get-daily-trade-idea.ts';
 import '@/ai/tools/crypto-data-tool.ts';
 import '@/ai/flows/get-live-price.ts';
 import '@/ai/flows/get-technical-analysis.ts';
+import '@/ai/flows/get-crypto-rating.ts';

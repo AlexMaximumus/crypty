@@ -18,6 +18,7 @@ const CryptoMarketDataSchema = z.object({
     })
     .describe('Fear & Greed Index data.'),
 });
+export type CryptoMarketData = z.infer<typeof CryptoMarketDataSchema>;
 
 export const getCryptoMarketData = ai.defineTool(
   {
