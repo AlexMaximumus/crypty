@@ -177,7 +177,7 @@ export function DailyTradeIdea() {
             <div className="space-y-6">
                 <div className="flex flex-wrap gap-4 items-center">
                     <Badge variant="outline" className="text-lg py-1 px-3">{idea.cryptocurrency}</Badge>
-                    <div className={`flex items-center gap-2 text-lg font-bold ${recommendationIsBuy ? 'text-green-400' : 'text-red-400'}`}>
+                    <div className={cn('flex items-center gap-2 text-lg font-bold', recommendationIsBuy ? 'text-green-400' : 'text-red-400')}>
                         {recommendationIsBuy ? <TrendingUp className="h-6 w-6" /> : <TrendingDown className="h-6 w-6" />}
                         <span>{recommendationIsBuy ? 'Покупка' : 'Продажа'}</span>
                     </div>
@@ -190,7 +190,7 @@ export function DailyTradeIdea() {
                     </div>
                      <div>
                         <p className="text-sm text-muted-foreground">Текущая цена</p>
-                        <p className="text-xl font-bold">${currentPrice?.toLocaleString()}</p>
+                        <p className="text-xl font-bold">${currentPrice?.toLocaleString(undefined, { maximumFractionDigits: 2, minimumFractionDigits: 2})}</p>
                     </div>
                      <div>
                         <p className="text-sm text-muted-foreground">Целевая цена</p>
@@ -204,25 +204,29 @@ export function DailyTradeIdea() {
                 </div>
                 
                  <div className="h-60 w-full">
-                    <ChartContainer config={chartConfig} className="h-full w-full">
-                        <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                            <defs>
-                                <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor={recommendationIsBuy ? "hsl(var(--primary))" : "hsl(var(--destructive))"} stopOpacity={0.8}/>
-                                <stop offset="95%" stopColor={recommendationIsBuy ? "hsl(var(--primary))" : "hsl(var(--destructive))"} stopOpacity={0}/>
-                                </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border) / 0.5)" />
-                            <XAxis dataKey="time" type="number" domain={['dataMin', 'dataMax']} tickFormatter={(unixTime) => new Date(unixTime).toLocaleTimeString()} hide/>
-                            <YAxis domain={['dataMin - (dataMax - dataMin) * 0.2', 'dataMax + (dataMax - dataMin) * 0.2']} hide />
-                            <Tooltip content={<ChartTooltipContent hideIndicator formatter={(value, name) => (
-                                <div className="flex flex-col">
-                                    <span>Цена: ${Number(value).toLocaleString()}</span>
-                                </div>
-                            )} />} />
-                            <Area type="monotone" dataKey="price" stroke={chartConfig.price.color} fillOpacity={1} fill="url(#colorPrice)" dot={false} />
-                        </AreaChart>
-                    </ChartContainer>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <ChartContainer config={chartConfig}>
+                          <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                              <defs>
+                                  <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="5%" stopColor={chartConfig.price.color} stopOpacity={0.8}/>
+                                  <stop offset="95%" stopColor={chartConfig.price.color} stopOpacity={0}/>
+                                  </linearGradient>
+                              </defs>
+                              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border) / 0.5)" />
+                              <XAxis dataKey="time" type="number" domain={['dataMin', 'dataMax']} tickFormatter={(unixTime) => new Date(unixTime).toLocaleTimeString()} hide/>
+                              <YAxis domain={['dataMin - (dataMax - dataMin) * 0.2', 'dataMax + (dataMax - dataMin) * 0.2']} hide />
+                              <Tooltip 
+                                content={<ChartTooltipContent hideIndicator formatter={(value) => (
+                                  <div className="flex flex-col">
+                                      <span>Цена: ${Number(value).toLocaleString(undefined, { maximumFractionDigits: 2, minimumFractionDigits: 2})}</span>
+                                  </div>
+                                )} />} 
+                              />
+                              <Area type="monotone" dataKey="price" stroke={chartConfig.price.color} fillOpacity={1} fill="url(#colorPrice)" dot={false} />
+                          </AreaChart>
+                      </ChartContainer>
+                    </ResponsiveContainer>
                 </div>
             </div>
             
@@ -255,17 +259,17 @@ export function DailyTradeIdea() {
                     <div className="space-y-3 pt-4 border-t">
                         <div className="flex justify-between items-center">
                             <span className="text-muted-foreground">Потенциальная прибыль:</span>
-                            <span className={`text-lg font-bold ${profit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                            <span className={cn('text-lg font-bold', profit >= 0 ? 'text-green-400' : 'text-red-400')}>
                                 ${profit.toFixed(2)}
                             </span>
                         </div>
                          <div className="flex justify-between items-center">
                             <span className="text-muted-foreground">Рентабельность (ROI):</span>
-                             <span className={`text-lg font-bold ${profit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                             <span className={cn('text-lg font-bold', profit >= 0 ? 'text-green-400' : 'text-red-400')}>
                                 {profitPercentage.toFixed(2)}%
                             </span>
                         </div>
-                        <p className="text-xs text-muted-foreground pt-2">Расчет основан на текущей цене {currentPrice?.toLocaleString()} и цене входа.</p>
+                        <p className="text-xs text-muted-foreground pt-2">Расчет основан на текущей цене ${currentPrice?.toLocaleString(undefined, { maximumFractionDigits: 2, minimumFractionDigits: 2})} и цене входа.</p>
                     </div>
                 )}
             </div>
