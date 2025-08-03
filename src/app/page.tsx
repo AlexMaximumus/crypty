@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { ArrowRight, BarChart, Bell, MessageCircle, BookOpen, FlaskConical } from 'lucide-react';
+import { DailyTradeIdea } from '@/components/daily-trade-idea';
 
 const features = [
   {
@@ -42,14 +43,9 @@ export default function DashboardPage() {
       <div className="flex flex-col gap-2 rounded-lg border bg-card text-card-foreground shadow-sm p-6 md:p-8">
         <h1 className="text-3xl font-bold font-headline tracking-tight">Добро пожаловать в CryptoVision</h1>
         <p className="text-muted-foreground">Ваш интеллектуальный навигатор в мире криптовалют. Используйте мощь ИИ для принятия верных решений.</p>
-        <div className="mt-4">
-          <Link href="/market-analyzer">
-            <Button>
-              Начать анализ <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </Link>
-        </div>
       </div>
+
+      <DailyTradeIdea />
 
       <div className="grid gap-4 md:grid-cols-2">
         {features.map((feature) => (
