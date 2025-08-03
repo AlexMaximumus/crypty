@@ -48,7 +48,7 @@ export function DailyTradeIdea() {
     setChartData([{ time: Date.now(), price: initialPrice }]);
 
     const streamSymbol = `${symbol.toLowerCase()}usdt@trade`;
-    ws.current = new WebSocket(`wss://stream.binance.com:9443/ws/${streamSymbol}`);
+    ws.current = new WebSocket(`wss://stream.binance.com:443/ws/${streamSymbol}`);
 
     ws.current.onopen = () => {
         console.log(`WebSocket connected for ${streamSymbol}`);
