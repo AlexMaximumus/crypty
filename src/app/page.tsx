@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { ArrowRight, BarChart, Bell, MessageCircle, BookOpen, FlaskConical } from 'lucide-react';
+import { ArrowRight, BarChart, Bell, MessageCircle, BookOpen, FlaskConical, CandlestickChart } from 'lucide-react';
 import { DailyTradeIdea } from '@/components/daily-trade-idea';
 
 const features = [
@@ -10,6 +10,12 @@ const features = [
     description: "ИИ-анализ для выявления лучших моментов для покупки и продажи.",
     href: "/market-analyzer",
     icon: BarChart
+  },
+  {
+    title: "Технический Анализ",
+    description: "Автоматический анализ свечных графиков и индикаторов.",
+    href: "/technical-analysis",
+    icon: CandlestickChart
   },
   {
     title: "Умные Оповещения",
@@ -47,7 +53,7 @@ export default function DashboardPage() {
 
       <DailyTradeIdea />
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {features.map((feature) => (
           <Card key={feature.title} className="flex flex-col transition-all hover:border-primary/50 hover:shadow-lg">
             <CardHeader className="flex flex-row items-center gap-4">

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { BarChart, Bell, BookOpen, LayoutDashboard, MessageCircle, PanelLeft, FlaskConical } from 'lucide-react';
+import { BarChart, Bell, BookOpen, LayoutDashboard, MessageCircle, PanelLeft, FlaskConical, CandlestickChart } from 'lucide-react';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
@@ -17,6 +17,7 @@ export const metadata: Metadata = {
 const navItems = [
   { href: '/', label: 'Главная', icon: LayoutDashboard },
   { href: '/market-analyzer', label: 'Анализатор', icon: BarChart },
+  { href: '/technical-analysis', label: 'Тех. анализ', icon: CandlestickChart },
   { href: '/smart-alerts', label: 'Оповещения', icon: Bell },
   { href: '/research', label: 'Исследования', icon: FlaskConical },
   { href: '/assistant', label: 'Ассистент', icon: MessageCircle },
