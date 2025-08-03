@@ -32,6 +32,8 @@ const TechnicalAnalysisOutputSchema = z.object({
   reasoning: z.string().describe('Detailed reasoning for the recommendation, citing specific indicators and price action.'),
   confidenceScore: z.number().min(0).max(1).describe('The confidence score for this recommendation, from 0 to 1.'),
   candlestickData: z.array(CandlestickDataPointSchema).describe('The candlestick data used for the analysis.'),
+  supportLevel: z.number().optional().describe('The identified key support level.'),
+  resistanceLevel: z.number().optional().describe('The identified key resistance level.'),
 });
 export type TechnicalAnalysisOutput = z.infer<typeof TechnicalAnalysisOutputSchema>;
 
@@ -54,6 +56,8 @@ const prompt = ai.definePrompt({
         recommendation: z.enum(['Buy', 'Sell', 'Hold']),
         reasoning: z.string(),
         confidenceScore: z.number().min(0).max(1),
+        supportLevel: z.number().optional().describe('The most significant support level based on the data.'),
+        resistanceLevel: z.number().optional().describe('The most significant resistance level based on the data.'),
     })
   },
   tools: [getCandlestickData],
@@ -67,6 +71,8 @@ Based on your comprehensive analysis, provide:
 1.  A clear recommendation: "Buy", "Sell", or "Hold".
 2.  Detailed, step-by-step reasoning for your recommendation. Mention specific price levels, indicator values, and candlestick patterns you are observing.
 3.  A confidence score between 0 and 1.
+4.  The most important Support Level you identified.
+5.  The most important Resistance Level you identified.
 
 Candlestick Data (JSON format):
 {{{candlestickData}}}

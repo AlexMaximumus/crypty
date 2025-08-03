@@ -12,7 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Lightbulb, TrendingUp, TrendingDown, MinusCircle, CandlestickChart as CandlestickChartIcon } from 'lucide-react';
 import { Progress } from "@/components/ui/progress";
-import { Bar, ComposedChart, CartesianGrid, Tooltip, XAxis, YAxis, ResponsiveContainer, Line } from 'recharts';
+import { Bar, ComposedChart, CartesianGrid, Tooltip, XAxis, YAxis, ResponsiveContainer, Line, ReferenceLine, Label } from 'recharts';
 import { ChartConfig } from '@/components/ui/chart';
 import { cn } from '@/lib/utils';
 
@@ -180,7 +180,7 @@ export function TechnicalAnalysis() {
                     <div className="md:col-span-2 space-y-4">
                         <div className="h-[400px] w-full">
                             <ResponsiveContainer width="100%" height="100%">
-                                <ComposedChart data={result.candlestickData} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                                <ComposedChart data={result.candlestickData} margin={{ top: 20, right: 60, bottom: 20, left: 20 }}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border) / 0.5)"/>
                                     <XAxis dataKey="timestamp" tickFormatter={(time) => new Date(time).toLocaleDateString()} hide/>
                                     <YAxis yAxisId="left" orientation="left" domain={['dataMin - (dataMax - dataMin) * 0.1', 'dataMax + (dataMax - dataMin) * 0.1']} hide />
@@ -212,6 +212,16 @@ export function TechnicalAnalysis() {
                                         // @ts-ignore
                                         shape={(props) => <Candlestick {...props} />}
                                     />
+                                    {result.supportLevel && (
+                                        <ReferenceLine y={result.supportLevel} yAxisId="left" stroke="hsl(var(--chart-2))" strokeWidth={2} strokeDasharray="3 3">
+                                            <Label value={`Поддержка: ${result.supportLevel.toFixed(2)}`} position="right" fill="hsl(var(--chart-2))" fontSize={12} />
+                                        </ReferenceLine>
+                                    )}
+                                    {result.resistanceLevel && (
+                                        <ReferenceLine y={result.resistanceLevel} yAxisId="left" stroke="hsl(var(--chart-1))" strokeWidth={2} strokeDasharray="3 3">
+                                            <Label value={`Сопротивление: ${result.resistanceLevel.toFixed(2)}`} position="right" fill="hsl(var(--chart-1))" fontSize={12} />
+                                        </ReferenceLine>
+                                    )}
                                 </ComposedChart>
                             </ResponsiveContainer>
                         </div>
