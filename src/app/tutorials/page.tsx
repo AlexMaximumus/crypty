@@ -1,5 +1,45 @@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { BarChart2, Book, GitBranch, Link2, LineChart, Smile } from "lucide-react";
+
+const analyticsKnowledgeBase = [
+    {
+        value: "market-analysis",
+        title: "Анализ Рынка",
+        icon: BarChart2,
+        content: "Общая оценка текущей ситуации на рынке. Включает в себя анализ цены, объема торгов, ликвидности и волатильности. Этот вид анализа помогает понять общее направление движения рынка и силу текущего тренда."
+    },
+    {
+        value: "technical-analysis",
+        title: "Технический Анализ",
+        icon: LineChart,
+        content: "Метод прогнозирования будущего движения цен на основе изучения прошлых рыночных данных, в первую очередь цены и объема. Технический анализ использует графики и индикаторы (например, скользящие средние, RSI), чтобы определить закономерности и сигналы для входа или выхода из сделки."
+    },
+    {
+        value: "on-chain-analysis",
+        title: "On-Chain Анализ",
+        icon: Link2,
+        content: "Анализ данных непосредственно из блокчейна криптовалюты. Включает в себя отслеживание крупных транзакций, притока/оттока средств с бирж, активности кошельков и других метрик. Этот анализ дает представление о действиях крупных игроков и общем состоянии сети."
+    },
+    {
+        value: "sentiment-analysis",
+        title: "Анализ Настроений (Sentiment Analysis)",
+        icon: Smile,
+        content: "Оценка общего эмоционального фона участников рынка по отношению к активу. Анализируются новости, социальные сети и другие публичные источники. Инструменты, такие как 'Индекс страха и жадности', являются частью этого анализа и помогают понять, преобладают ли на рынке бычьи (оптимистичные) или медвежьи (пессимистичные) настроения."
+    },
+    {
+        value: "open-interest",
+        title: "Термин: Открытый Интерес (Open Interest)",
+        icon: GitBranch,
+        content: "Общее количество активных фьючерсных или опционных контрактов, которые еще не были закрыты. Рост открытого интереса указывает на приток новых денег в актив и подтверждает силу текущего тренда. Снижение говорит о выходе из позиций и возможном ослаблении тренда."
+    },
+    {
+        value: "funding-rate",
+        title: "Термин: Ставка Финансирования (Funding Rate)",
+        icon: GitBranch,
+        content: "Механизм, используемый на биржах для привязки цены бессрочного фьючерса к спотовой цене актива. Положительная ставка означает, что трейдеры с длинными позициями (лонги) платят трейдерам с короткими (шорты), что указывает на бычьи настроения. Отрицательная ставка означает обратное."
+    }
+];
 
 export default function TutorialsPage() {
   return (
@@ -40,6 +80,34 @@ export default function TutorialsPage() {
           </Accordion>
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader>
+            <div className="flex items-center gap-3 mb-2 text-primary">
+                <Book className="h-6 w-6"/>
+                <CardTitle className="font-headline text-primary">База Знаний по Аналитике</CardTitle>
+            </div>
+            <CardDescription>Здесь объясняются ключевые концепции и термины, которые ИИ использует для анализа и предоставления рекомендаций.</CardDescription>
+        </CardHeader>
+        <CardContent>
+            <Accordion type="single" collapsible className="w-full">
+                {analyticsKnowledgeBase.map(item => (
+                    <AccordionItem key={item.value} value={item.value}>
+                        <AccordionTrigger className="font-headline">
+                            <div className="flex items-center gap-3">
+                                <item.icon className="h-5 w-5" />
+                                <span>{item.title}</span>
+                            </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="space-y-2 pl-8 text-muted-foreground">
+                           {item.content}
+                        </AccordionContent>
+                    </AccordionItem>
+                ))}
+            </Accordion>
+        </CardContent>
+      </Card>
+
     </div>
   );
 }
