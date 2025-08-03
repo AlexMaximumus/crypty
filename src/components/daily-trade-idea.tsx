@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { getDailyTradeIdea, type DailyTradeIdeaOutput } from '@/ai/flows/get-daily-trade-idea';
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, TrendingUp, TrendingDown, Lightbulb, Calculator, RefreshCw } from 'lucide-react';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
@@ -21,9 +21,10 @@ const calculatorSchema = z.object({
   investment: z.coerce.number().positive('Сумма должна быть положительной'),
 });
 
-const ideaRequestSchema = z.object({
-  cryptocurrency: z.string(),
-});
+interface ChartDataPoint {
+    time: number;
+    price: number;
+}
 
 export function DailyTradeIdea() {
   const [isLoading, setIsLoading] = useState(true);
@@ -31,21 +32,64 @@ export function DailyTradeIdea() {
   const [error, setError] = useState<string | null>(null);
   const [profit, setProfit] = useState<number | null>(null);
   const [selectedCrypto, setSelectedCrypto] = useState('BTC');
+  const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
+  const ws = useRef<WebSocket | null>(null);
 
   const calculatorForm = useForm<z.infer<typeof calculatorSchema>>({
     resolver: zodResolver(calculatorSchema),
     defaultValues: { investment: 1000 },
   });
 
+  const setupWebSocket = (symbol: string, initialPrice: number) => {
+    if (ws.current) {
+        ws.current.close();
+    }
+    
+    setChartData([{ time: Date.now(), price: initialPrice }]);
+
+    const streamSymbol = `${symbol.toLowerCase()}usdt@trade`;
+    ws.current = new WebSocket(`wss://stream.binance.com:9443/ws/${streamSymbol}`);
+
+    ws.current.onopen = () => {
+        console.log(`WebSocket connected for ${streamSymbol}`);
+    };
+
+    ws.current.onmessage = (event) => {
+        const message = JSON.parse(event.data);
+        const newPrice = parseFloat(message.p);
+        
+        setChartData(prevData => {
+            const newData = [...prevData, { time: message.T, price: newPrice }];
+            // Keep only last 100 data points for performance
+            return newData.length > 100 ? newData.slice(newData.length - 100) : newData;
+        });
+    };
+
+    ws.current.onerror = (error) => {
+        console.error('WebSocket error:', error);
+    };
+
+    ws.current.onclose = () => {
+        console.log(`WebSocket disconnected for ${streamSymbol}`);
+    };
+  };
+
   const fetchIdea = async (crypto: string) => {
     setIsLoading(true);
     setError(null);
     setIdea(null);
     setProfit(null);
+    setChartData([]);
     calculatorForm.reset({ investment: 1000 });
+    
+    if (ws.current) {
+        ws.current.close();
+    }
+
     try {
       const response = await getDailyTradeIdea({ cryptocurrency: crypto });
       setIdea(response);
+      setupWebSocket(response.cryptocurrency, response.entryPrice);
     } catch (e) {
       setError('Не удалось получить торговую идею. Попробуйте обновить.');
       console.error(e);
@@ -56,16 +100,16 @@ export function DailyTradeIdea() {
 
   useEffect(() => {
     fetchIdea(selectedCrypto);
+
+    // Cleanup WebSocket on component unmount
+    return () => {
+        if (ws.current) {
+            ws.current.close();
+        }
+    };
   }, [selectedCrypto]);
   
   const recommendationIsBuy = idea?.recommendation === 'buy';
-
-  const chartData = idea
-    ? [
-        { label: 'Вход', price: idea.entryPrice },
-        { label: 'Цель', price: idea.targetPrice },
-      ]
-    : [];
 
   const chartConfig = {
     price: {
@@ -75,20 +119,24 @@ export function DailyTradeIdea() {
   } satisfies ChartConfig;
 
   function onCalculate(values: z.infer<typeof calculatorSchema>) {
-    if (!idea) return;
+    if (!idea || !chartData.length) return;
     const { investment } = values;
     const { entryPrice, targetPrice, recommendation } = idea;
+    
+    const lastPrice = chartData[chartData.length - 1].price;
     const quantity = investment / entryPrice;
     let calculatedProfit;
+
     if (recommendation === 'buy') {
-      calculatedProfit = (targetPrice - entryPrice) * quantity;
+      calculatedProfit = (lastPrice - entryPrice) * quantity;
     } else { // 'sell'
-      calculatedProfit = (entryPrice - targetPrice) * quantity;
+      calculatedProfit = (entryPrice - lastPrice) * quantity;
     }
     setProfit(calculatedProfit);
   }
 
   const profitPercentage = profit && idea ? (profit / (calculatorForm.getValues('investment') || 1)) * 100 : 0;
+  const currentPrice = chartData.length > 0 ? chartData[chartData.length - 1].price : idea?.entryPrice;
 
 
   return (
@@ -99,7 +147,7 @@ export function DailyTradeIdea() {
           <CardDescription>Актуальная торговая рекомендация от ИИ на основе рыночных данных.</CardDescription>
         </div>
         <div className="flex items-center gap-2">
-            <Select value={selectedCrypto} onValueChange={setSelectedCrypto}>
+            <Select value={selectedCrypto} onValueChange={setSelectedCrypto} disabled={isLoading}>
                 <SelectTrigger className="w-[120px]">
                     <SelectValue placeholder="Валюта" />
                 </SelectTrigger>
@@ -135,14 +183,18 @@ export function DailyTradeIdea() {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 text-center">
+                <div className="grid grid-cols-3 gap-4 text-center">
                     <div>
                         <p className="text-sm text-muted-foreground">Цена входа</p>
-                        <p className="text-2xl font-bold">${idea.entryPrice.toLocaleString()}</p>
+                        <p className="text-xl font-bold">${idea.entryPrice.toLocaleString()}</p>
+                    </div>
+                     <div>
+                        <p className="text-sm text-muted-foreground">Текущая цена</p>
+                        <p className="text-xl font-bold">${currentPrice?.toLocaleString()}</p>
                     </div>
                      <div>
                         <p className="text-sm text-muted-foreground">Целевая цена</p>
-                        <p className="text-2xl font-bold">${idea.targetPrice.toLocaleString()}</p>
+                        <p className="text-xl font-bold">${idea.targetPrice.toLocaleString()}</p>
                     </div>
                 </div>
 
@@ -161,10 +213,14 @@ export function DailyTradeIdea() {
                                 </linearGradient>
                             </defs>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border) / 0.5)" />
-                            <XAxis dataKey="label" axisLine={false} tickLine={false} />
-                            <YAxis domain={['dataMin - 100', 'dataMax + 100']} hide />
-                            <Tooltip content={<ChartTooltipContent hideIndicator />} />
-                            <Area type="monotone" dataKey="price" stroke={chartConfig.price.color} fillOpacity={1} fill="url(#colorPrice)" />
+                            <XAxis dataKey="time" type="number" domain={['dataMin', 'dataMax']} tickFormatter={(unixTime) => new Date(unixTime).toLocaleTimeString()} hide/>
+                            <YAxis domain={['dataMin - (dataMax - dataMin) * 0.2', 'dataMax + (dataMax - dataMin) * 0.2']} hide />
+                            <Tooltip content={<ChartTooltipContent hideIndicator formatter={(value, name) => (
+                                <div className="flex flex-col">
+                                    <span>Цена: ${Number(value).toLocaleString()}</span>
+                                </div>
+                            )} />} />
+                            <Area type="monotone" dataKey="price" stroke={chartConfig.price.color} fillOpacity={1} fill="url(#colorPrice)" dot={false} />
                         </AreaChart>
                     </ChartContainer>
                 </div>
@@ -191,7 +247,7 @@ export function DailyTradeIdea() {
                             </FormItem>
                             )}
                         />
-                         <Button type="submit" className="w-full">Рассчитать</Button>
+                         <Button type="submit" className="w-full">Рассчитать по текущей цене</Button>
                     </form>
                 </Form>
 
@@ -209,6 +265,7 @@ export function DailyTradeIdea() {
                                 {profitPercentage.toFixed(2)}%
                             </span>
                         </div>
+                        <p className="text-xs text-muted-foreground pt-2">Расчет основан на текущей цене {currentPrice?.toLocaleString()} и цене входа.</p>
                     </div>
                 )}
             </div>
