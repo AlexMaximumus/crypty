@@ -56,14 +56,7 @@ const getCryptoAdviceFlow = ai.defineFlow(
     outputSchema: GetCryptoAdviceOutputSchema,
   },
   async input => {
-    const llmResponse = await prompt(input);
-    const toolResponse = llmResponse.toolRequest;
-
-    if (toolResponse) {
-        console.log('Tool request:', toolResponse);
-    }
-    
-    const {output} = llmResponse;
+    const {output} = await prompt(input);
     return output!;
   }
 );

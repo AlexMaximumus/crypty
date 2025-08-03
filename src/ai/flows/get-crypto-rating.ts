@@ -64,8 +64,8 @@ export const getCryptoRatingFlow = ai.defineFlow(
     outputSchema: CryptoRatingOutputSchema,
   },
   async (input) => {
-    // This provides a default if the input is `getCryptoRating({})`
-    const cryptocurrencies = input.cryptocurrencies ?? ['BTC', 'ETH', 'SOL', 'XRP', 'DOGE'];
+    // This provides a default if the input is `getCryptoRating({})` or if the input is empty
+    const cryptocurrencies = (input.cryptocurrencies && input.cryptocurrencies.length > 0) ? input.cryptocurrencies : ['BTC', 'ETH', 'SOL', 'XRP', 'DOGE'];
     
     const marketDataPromises = cryptocurrencies.map(async (crypto) => {
       const data = await getCryptoMarketData({ ticker: crypto });
