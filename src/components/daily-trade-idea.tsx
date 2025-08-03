@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -16,7 +16,6 @@ import { Input } from './ui/input';
 import { Badge } from './ui/badge';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { getCryptoMarketData } from '@/ai/tools/crypto-data-tool';
 
 const calculatorSchema = z.object({
   investment: z.coerce.number().positive('Сумма должна быть положительной'),
@@ -34,67 +33,90 @@ export function DailyTradeIdea() {
   const [profit, setProfit] = useState<number | null>(null);
   const [selectedCrypto, setSelectedCrypto] = useState('BTC');
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const ws = useRef<WebSocket | null>(null);
 
   const calculatorForm = useForm<z.infer<typeof calculatorSchema>>({
     resolver: zodResolver(calculatorSchema),
     defaultValues: { investment: 1000 },
   });
 
-  const setupPricePolling = (crypto: string) => {
-    if (intervalRef.current) {
-        clearInterval(intervalRef.current);
+  const setupWebSocket = useCallback((crypto: string) => {
+    // Close previous connection if it exists
+    if (ws.current) {
+        ws.current.close();
     }
 
-    intervalRef.current = setInterval(async () => {
-      try {
-        const marketData = await getCryptoMarketData({ ticker: crypto });
-        if(marketData?.price) {
-          setChartData(prevData => {
-              const newData = [...prevData, { time: Date.now(), price: marketData.price }];
-              return newData.length > 100 ? newData.slice(newData.length - 100) : newData;
-          });
-        }
-      } catch (e) {
-        console.error("Failed to poll for market data", e);
-      }
-    }, 2000); // Poll every 2 seconds
-  };
+    const streamName = `${crypto.toLowerCase()}usdt@trade`;
+    const socket = new WebSocket(`wss://stream.binance.com:443/ws/${streamName}`);
 
-  const fetchIdea = async (crypto: string) => {
+    socket.onopen = () => {
+      console.log(`WebSocket connected to ${streamName}`);
+    };
+
+    socket.onmessage = (event) => {
+        const message = JSON.parse(event.data);
+        if (message.e === 'trade' && message.p) {
+            const newPrice = parseFloat(message.p);
+            setChartData(prevData => {
+                const newDataPoint = { time: Date.now(), price: newPrice };
+                const newData = [...prevData, newDataPoint];
+                return newData.length > 100 ? newData.slice(newData.length - 100) : newData;
+            });
+        }
+    };
+
+    socket.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        setError('Ошибка подключения к данным в реальном времени.');
+    };
+
+    socket.onclose = () => {
+        console.log('WebSocket disconnected');
+    };
+    
+    ws.current = socket;
+
+  }, []);
+
+
+  const fetchIdea = useCallback(async (crypto: string) => {
     setIsLoading(true);
     setError(null);
     setIdea(null);
     setProfit(null);
-    setChartData([]);
     calculatorForm.reset({ investment: 1000 });
     
-    if (intervalRef.current) {
-        clearInterval(intervalRef.current);
+    // Close existing WebSocket connection
+    if (ws.current) {
+        ws.current.close();
+        ws.current = null;
     }
+    setChartData([]);
 
     try {
       const response = await getDailyTradeIdea({ cryptocurrency: crypto });
       setIdea(response);
+      // Initialize chart with the entry price
       setChartData([{ time: Date.now(), price: response.entryPrice }]);
-      setupPricePolling(crypto);
+      // Setup new WebSocket connection
+      setupWebSocket(crypto);
     } catch (e) {
       setError('Не удалось получить торговую идею. Попробуйте обновить.');
       console.error(e);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [calculatorForm, setupWebSocket]);
 
   useEffect(() => {
     fetchIdea(selectedCrypto);
 
     return () => {
-        if (intervalRef.current) {
-            clearInterval(intervalRef.current);
+        if (ws.current) {
+            ws.current.close();
         }
     };
-  }, [selectedCrypto]);
+  }, [selectedCrypto, fetchIdea]);
   
   const recommendationIsBuy = idea?.recommendation === 'buy';
 
@@ -108,13 +130,13 @@ export function DailyTradeIdea() {
   function onCalculate(values: z.infer<typeof calculatorSchema>) {
     if (!idea || !chartData.length) return;
     const { investment } = values;
-    const { entryPrice, targetPrice, recommendation } = idea;
+    const { entryPrice } = idea;
     
     const lastPrice = chartData[chartData.length - 1].price;
     const quantity = investment / entryPrice;
     let calculatedProfit;
 
-    if (recommendation === 'buy') {
+    if (recommendationIsBuy) {
       calculatedProfit = (lastPrice - entryPrice) * quantity;
     } else { // 'sell'
       calculatedProfit = (entryPrice - lastPrice) * quantity;
