@@ -64,7 +64,10 @@ const getCryptoRatingFlow = ai.defineFlow(
     outputSchema: CryptoRatingOutputSchema,
   },
   async (input) => {
-    const marketDataPromises = input.cryptocurrencies.map(async (crypto) => {
+    // This provides a default if the input is `getCryptoRating({})`
+    const cryptocurrencies = input.cryptocurrencies ?? ['BTC', 'ETH', 'SOL', 'XRP', 'DOGE'];
+    
+    const marketDataPromises = cryptocurrencies.map(async (crypto) => {
       const data = await getCryptoMarketData({ ticker: crypto });
       const tickerData = await new (require('ccxt').binance)().fetchTicker(`${crypto}/USDT`);
       return {
