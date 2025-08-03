@@ -33,45 +33,32 @@ export function DailyTradeIdea() {
   const [profit, setProfit] = useState<number | null>(null);
   const [selectedCrypto, setSelectedCrypto] = useState('BTC');
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
-  const ws = useRef<WebSocket | null>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const calculatorForm = useForm<z.infer<typeof calculatorSchema>>({
     resolver: zodResolver(calculatorSchema),
     defaultValues: { investment: 1000 },
   });
 
-  const setupWebSocket = (symbol: string, initialPrice: number) => {
-    if (ws.current) {
-        ws.current.close();
+  const setupPriceSimulation = (initialPrice: number) => {
+    if (intervalRef.current) {
+        clearInterval(intervalRef.current);
     }
     
     setChartData([{ time: Date.now(), price: initialPrice }]);
+    let lastPrice = initialPrice;
 
-    const streamSymbol = `${symbol.toLowerCase()}usdt@trade`;
-    ws.current = new WebSocket(`wss://stream.binance.com:443/ws/${streamSymbol}`);
-
-    ws.current.onopen = () => {
-        console.log(`WebSocket connected for ${streamSymbol}`);
-    };
-
-    ws.current.onmessage = (event) => {
-        const message = JSON.parse(event.data);
-        const newPrice = parseFloat(message.p);
+    intervalRef.current = setInterval(() => {
+        const change = (Math.random() - 0.5) * (lastPrice * 0.0005);
+        const newPrice = lastPrice + change;
+        lastPrice = newPrice;
         
         setChartData(prevData => {
-            const newData = [...prevData, { time: message.T, price: newPrice }];
+            const newData = [...prevData, { time: Date.now(), price: newPrice }];
             // Keep only last 100 data points for performance
             return newData.length > 100 ? newData.slice(newData.length - 100) : newData;
         });
-    };
-
-    ws.current.onerror = (error) => {
-        console.error('WebSocket error:', error);
-    };
-
-    ws.current.onclose = () => {
-        console.log(`WebSocket disconnected for ${streamSymbol}`);
-    };
+    }, 1000);
   };
 
   const fetchIdea = async (crypto: string) => {
@@ -82,14 +69,14 @@ export function DailyTradeIdea() {
     setChartData([]);
     calculatorForm.reset({ investment: 1000 });
     
-    if (ws.current) {
-        ws.current.close();
+    if (intervalRef.current) {
+        clearInterval(intervalRef.current);
     }
 
     try {
       const response = await getDailyTradeIdea({ cryptocurrency: crypto });
       setIdea(response);
-      setupWebSocket(response.cryptocurrency, response.entryPrice);
+      setupPriceSimulation(response.entryPrice);
     } catch (e) {
       setError('Не удалось получить торговую идею. Попробуйте обновить.');
       console.error(e);
@@ -101,10 +88,9 @@ export function DailyTradeIdea() {
   useEffect(() => {
     fetchIdea(selectedCrypto);
 
-    // Cleanup WebSocket on component unmount
     return () => {
-        if (ws.current) {
-            ws.current.close();
+        if (intervalRef.current) {
+            clearInterval(intervalRef.current);
         }
     };
   }, [selectedCrypto]);
