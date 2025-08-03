@@ -10,6 +10,9 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import { getDailyTradeIdea } from './get-daily-trade-idea';
+import { getCryptoRating } from './get-crypto-rating';
+import { getTechnicalAnalysis } from './get-technical-analysis';
 
 const GetCryptoAdviceInputSchema = z.object({
   query: z.string().describe('The user query about cryptocurrency trading, wallet setup, or fund management.'),
@@ -29,12 +32,21 @@ const prompt = ai.definePrompt({
   name: 'getCryptoAdvicePrompt',
   input: {schema: GetCryptoAdviceInputSchema},
   output: {schema: GetCryptoAdviceOutputSchema},
-  prompt: `You are a helpful AI assistant specializing in cryptocurrency trading, wallet setup, and fund management.
+  tools: [getDailyTradeIdea, getCryptoRating, getTechnicalAnalysis],
+  prompt: `You are a helpful and very powerful AI assistant specializing in cryptocurrency trading.
 All responses must be in Russian.
 
-  Provide clear, concise, and accurate advice based on the user's query.
+Your primary goal is to provide clear, concise, actionable and data-driven advice.
 
-  Query: {{{query}}}`,
+When a user asks for a recommendation, a trade idea, or a direct question like "what should I buy?", you MUST use the provided tools to get real-time data and analysis. Do not provide generic or speculative answers.
+
+- If asked for a "trade idea", use the getDailyTradeIdea tool.
+- If asked for a comparison or "rating", use the getCryptoRating tool.
+- If asked for "technical analysis", use the getTechnicalAnalysis tool.
+
+Base your final response on the output of the tools.
+
+Query: {{{query}}}`,
 });
 
 const getCryptoAdviceFlow = ai.defineFlow(
@@ -44,7 +56,14 @@ const getCryptoAdviceFlow = ai.defineFlow(
     outputSchema: GetCryptoAdviceOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
+    const llmResponse = await prompt(input);
+    const toolResponse = llmResponse.toolRequest;
+
+    if (toolResponse) {
+        console.log('Tool request:', toolResponse);
+    }
+    
+    const {output} = llmResponse;
     return output!;
   }
 );

@@ -8,8 +8,7 @@ export default function AssistantPage() {
         <CardHeader>
           <CardTitle className="font-headline">ИИ-Ассистент</CardTitle>
           <CardDescription>
-            Задайте любой вопрос о трейдинге, кошельках или управлении средствами.
-            Например: "Какой кошелек лучше для Ethereum?"
+            Ваш персональный крипто-аналитик. Задайте вопрос или используйте примеры ниже.
           </CardDescription>
         </CardHeader>
       </Card>
