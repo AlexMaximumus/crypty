@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -36,7 +37,7 @@ export function DailyTradeIdea() {
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
   
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-
+  const isMounted = useRef(false);
 
   const calculatorForm = useForm<z.infer<typeof calculatorSchema>>({
     resolver: zodResolver(calculatorSchema),
@@ -46,7 +47,7 @@ export function DailyTradeIdea() {
   const fetchLivePrice = useCallback(async (crypto: string) => {
     try {
         const result = await getLivePrice({ cryptocurrency: crypto });
-        if (result && result.price) {
+        if (result && result.price && isMounted.current) {
              setChartData(prevData => {
                 const newDataPoint = { time: Date.now(), price: result.price! };
                 const newData = [...prevData, newDataPoint];
@@ -75,26 +76,32 @@ export function DailyTradeIdea() {
 
     try {
       const response = await getDailyTradeIdea({ cryptocurrency: crypto });
-      setIdea(response);
-      setChartData([{ time: Date.now(), price: response.entryPrice }]);
-      
-      // Start fetching live price
-      intervalRef.current = setInterval(() => {
-          fetchLivePrice(crypto)
-      }, 1000);
+      if (isMounted.current) {
+        setIdea(response);
+        setChartData([{ time: Date.now(), price: response.entryPrice }]);
+        
+        // Start fetching live price
+        intervalRef.current = setInterval(() => {
+            fetchLivePrice(crypto)
+        }, 1000);
+      }
 
     } catch (e) {
       setError('Не удалось получить торговую идею. Попробуйте обновить.');
       console.error(e);
     } finally {
-      setIsLoading(false);
+        if(isMounted.current) {
+            setIsLoading(false);
+        }
     }
   }, [calculatorForm, fetchLivePrice]);
 
   useEffect(() => {
+    isMounted.current = true;
     fetchIdea(selectedCrypto);
 
     return () => {
+        isMounted.current = false;
         if (intervalRef.current) {
             clearInterval(intervalRef.current);
         }

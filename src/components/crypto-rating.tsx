@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -44,7 +45,7 @@ export function CryptoRating() {
             <Card className="relative">
                 <CardHeader>
                     <div className="flex items-center gap-3">
-                        <Sparkles className="h-6 w-6 text-primary animate-pulse" />
+                        <Sparkles className="h-6 w-6 text-primary" />
                         <CardTitle className="font-headline text-2xl">Рейтинг Криптовалют от ИИ</CardTitle>
                     </div>
                     <CardDescription>
