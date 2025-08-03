@@ -16,6 +16,7 @@ import { Input } from './ui/input';
 import { Badge } from './ui/badge';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { getCryptoMarketData } from '@/ai/tools/crypto-data-tool';
 
 const calculatorSchema = z.object({
   investment: z.coerce.number().positive('Сумма должна быть положительной'),
@@ -40,25 +41,24 @@ export function DailyTradeIdea() {
     defaultValues: { investment: 1000 },
   });
 
-  const setupPriceSimulation = (initialPrice: number) => {
+  const setupPricePolling = (crypto: string) => {
     if (intervalRef.current) {
         clearInterval(intervalRef.current);
     }
-    
-    setChartData([{ time: Date.now(), price: initialPrice }]);
-    let lastPrice = initialPrice;
 
-    intervalRef.current = setInterval(() => {
-        const change = (Math.random() - 0.5) * (lastPrice * 0.0005);
-        const newPrice = lastPrice + change;
-        lastPrice = newPrice;
-        
-        setChartData(prevData => {
-            const newData = [...prevData, { time: Date.now(), price: newPrice }];
-            // Keep only last 100 data points for performance
-            return newData.length > 100 ? newData.slice(newData.length - 100) : newData;
-        });
-    }, 1000);
+    intervalRef.current = setInterval(async () => {
+      try {
+        const marketData = await getCryptoMarketData({ ticker: crypto });
+        if(marketData?.price) {
+          setChartData(prevData => {
+              const newData = [...prevData, { time: Date.now(), price: marketData.price }];
+              return newData.length > 100 ? newData.slice(newData.length - 100) : newData;
+          });
+        }
+      } catch (e) {
+        console.error("Failed to poll for market data", e);
+      }
+    }, 2000); // Poll every 2 seconds
   };
 
   const fetchIdea = async (crypto: string) => {
@@ -76,7 +76,8 @@ export function DailyTradeIdea() {
     try {
       const response = await getDailyTradeIdea({ cryptocurrency: crypto });
       setIdea(response);
-      setupPriceSimulation(response.entryPrice);
+      setChartData([{ time: Date.now(), price: response.entryPrice }]);
+      setupPricePolling(crypto);
     } catch (e) {
       setError('Не удалось получить торговую идею. Попробуйте обновить.');
       console.error(e);
