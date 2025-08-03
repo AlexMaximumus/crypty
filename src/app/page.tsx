@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { ArrowRight, BarChart, Bell, MessageCircle, BookOpen } from 'lucide-react';
+import { ArrowRight, BarChart, Bell, MessageCircle, BookOpen, FlaskConical } from 'lucide-react';
 
 const features = [
   {
@@ -15,6 +15,12 @@ const features = [
     description: "Получайте уведомления о потенциально прибыльных сделках.",
     href: "/smart-alerts",
     icon: Bell
+  },
+  {
+    title: "Автоматические Исследования",
+    description: "Проводите глубокий анализ рынка по заданным метрикам.",
+    href: "/research",
+    icon: FlaskConical
   },
   {
     title: "ИИ-Ассистент",
