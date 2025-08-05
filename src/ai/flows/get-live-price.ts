@@ -1,7 +1,7 @@
 'use server';
 
 /**
- * @fileOverview Establishes a WebSocket connection to Binance to get real-time price updates.
+ * @fileOverview Establishes a WebSocket connection to Kraken to get real-time price updates.
  *
  * - getLivePrice - A function that returns the latest price for a cryptocurrency.
  * - LivePriceInput - The input type for the getLivePrice function.
@@ -31,18 +31,17 @@ function getPriceForCrypto(crypto: string): number | undefined {
 
 function setupWebSocket(crypto: string) {
     if (connections.has(crypto)) {
-        // cleanup old connection if it's not open
         const existing = connections.get(crypto);
-        if(existing && existing.ws.readyState !== WebSocket.OPEN) {
+        if(existing && existing.ws.readyState === WebSocket.OPEN) {
+            return; // Connection is already active
+        } else if (existing) {
             existing.ws.terminate();
             connections.delete(crypto);
-        } else {
-            return;
         }
     }
 
-    const streamName = `${crypto.toLowerCase()}usdt@trade`;
-    const ws = new WebSocket(`wss://stream.binance.com:443/ws/${streamName}`);
+    const ws = new WebSocket('wss://ws.kraken.com');
+    const pair = `${crypto.toUpperCase()}/USDT`;
 
     const connectionState = {
         ws,
@@ -51,11 +50,26 @@ function setupWebSocket(crypto: string) {
     };
     connections.set(crypto, connectionState);
 
+    ws.on('open', () => {
+        console.log(`WebSocket opened for ${crypto} with Kraken.`);
+        ws.send(JSON.stringify({
+            event: 'subscribe',
+            pair: [pair],
+            subscription: {
+                name: 'ticker'
+            }
+        }));
+    });
+
     ws.on('message', (data: WebSocket.Data) => {
         const message = JSON.parse(data.toString());
-        if (message.e === 'trade' && message.p) {
-            connectionState.lastPrice = parseFloat(message.p);
-            connectionState.lastUpdate = Date.now();
+        // Check if it's a ticker update and not a heartbeat or system status
+        if (Array.isArray(message) && message[1]?.c) {
+            const price = parseFloat(message[1].c[0]);
+            if (!isNaN(price)) {
+                connectionState.lastPrice = price;
+                connectionState.lastUpdate = Date.now();
+            }
         }
     });
 
@@ -71,15 +85,20 @@ function setupWebSocket(crypto: string) {
     });
 
     // Cleanup inactive connections
-    setInterval(() => {
+    const cleanupInterval = 30000;
+    const timeout = 60000;
+    const intervalId = setInterval(() => {
         connections.forEach((conn, key) => {
-            if (Date.now() - conn.lastUpdate > 60000) { // 1 minute timeout
+            if (Date.now() - conn.lastUpdate > timeout) {
                 conn.ws.terminate();
                 connections.delete(key);
                 console.log(`Closed inactive WebSocket for ${key}`);
             }
         });
-    }, 30000);
+        if (connections.size === 0) {
+            clearInterval(intervalId);
+        }
+    }, cleanupInterval);
 }
 
 
@@ -96,12 +115,14 @@ const getLivePriceFlow = ai.defineFlow(
   },
   async (input) => {
     const { cryptocurrency } = input;
-    if (!connections.has(cryptocurrency)) {
-        setupWebSocket(cryptocurrency);
-    }
     
-    // Give it a moment to connect and receive the first price
-    await new Promise(resolve => setTimeout(resolve, 250)); 
+    // Only setup a new websocket if one doesn't exist or is not open
+    const existingConn = connections.get(cryptocurrency);
+    if (!existingConn || existingConn.ws.readyState !== WebSocket.OPEN) {
+        setupWebSocket(cryptocurrency);
+        // Give it a moment to connect and receive the first price
+        await new Promise(resolve => setTimeout(resolve, 500)); 
+    }
     
     const price = getPriceForCrypto(cryptocurrency);
     return { price };

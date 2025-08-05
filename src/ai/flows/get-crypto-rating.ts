@@ -11,6 +11,7 @@
 import {ai} from '@/ai/genkit';
 import {getCryptoMarketData, type CryptoMarketData} from '@/ai/tools/crypto-data-tool';
 import {z} from 'genkit';
+import * as ccxt from 'ccxt';
 
 const CryptoRatingInputSchema = z.object({
   cryptocurrencies: z.array(z.string()).describe('The cryptocurrencies to get a rating for (e.g., BTC, ETH).'),
@@ -64,15 +65,22 @@ export const getCryptoRating = ai.defineTool(
   async (input) => {
     // This provides a default if the input is `getCryptoRating({})` or if the input is empty
     const cryptocurrencies = (input.cryptocurrencies && input.cryptocurrencies.length > 0) ? input.cryptocurrencies : ['BTC', 'ETH', 'SOL', 'XRP', 'DOGE'];
+    const exchange = new (ccxt.kraken)();
     
     const marketDataPromises = cryptocurrencies.map(async (crypto) => {
-      const data = await getCryptoMarketData({ ticker: crypto });
-      const tickerData = await new (require('ccxt').binance)().fetchTicker(`${crypto}/USDT`);
-      return {
-        symbol: crypto,
-        ...data,
-        change24h: tickerData.change || 0,
-      };
+      try {
+        const ticker = `${crypto}/USDT`;
+        const marketData = await exchange.fetchTicker(ticker);
+        return {
+          symbol: crypto,
+          price: marketData.last || 0,
+          volume24h: marketData.baseVolume || 0,
+          change24h: marketData.change || 0,
+        };
+      } catch (error) {
+        console.error(`Could not fetch data for ${crypto}:`, error);
+        return { symbol: crypto, price: 0, volume24h: 0, change24h: 0 };
+      }
     });
 
     const marketData = await Promise.all(marketDataPromises);
