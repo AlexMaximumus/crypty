@@ -32,14 +32,13 @@ export const getCryptoMarketData = ai.defineTool(
   async (input) => {
     console.log(`[Tool] Fetching market data for ${input.ticker} from Binance`);
 
-    const exchange = new ccxt.binance({
-        apiKey: process.env.BINANCE_API_KEY,
-        secret: process.env.BINANCE_API_SECRET,
-    });
-    
-    const symbol = `${input.ticker}/USDT`;
-
     try {
+      const exchange = new ccxt.binance({
+          apiKey: process.env.BINANCE_API_KEY,
+          secret: process.env.BINANCE_API_SECRET,
+      });
+      
+      const symbol = `${input.ticker}/USDT`;
       const tickerData = await exchange.fetchTicker(symbol);
       const fundingRateData = await exchange.fetchFundingRate(symbol);
       
@@ -55,7 +54,7 @@ export const getCryptoMarketData = ai.defineTool(
       };
 
     } catch (error) {
-      console.error(`Error fetching data from Binance for ${symbol}:`, error);
+      console.error(`Error fetching data from Binance for ${input.ticker}:`, error);
       const basePrice = input.ticker === 'ETH' ? 3500 : 68000;
       const price = basePrice + (Math.random() - 0.5) * 1000;
       return {
@@ -96,14 +95,13 @@ export const getCandlestickData = ai.defineTool(
   async (input) => {
     console.log(`[Tool] Fetching candlestick data for ${input.ticker} (${input.interval}) from Binance`);
 
-    const exchange = new ccxt.binance({
-      apiKey: process.env.BINANCE_API_KEY,
-      secret: process.env.BINANCE_API_SECRET,
-    });
-    
-    const symbol = `${input.ticker}/USDT`;
-
     try {
+      const exchange = new ccxt.binance({
+        apiKey: process.env.BINANCE_API_KEY,
+        secret: process.env.BINANCE_API_SECRET,
+      });
+      
+      const symbol = `${input.ticker}/USDT`;
       const ohlcv = await exchange.fetchOHLCV(symbol, input.interval, undefined, input.limit);
       return ohlcv.map(([timestamp, open, high, low, close, volume]) => ({
         timestamp,
@@ -114,26 +112,30 @@ export const getCandlestickData = ai.defineTool(
         volume,
       }));
     } catch (error) {
-      console.error(`Error fetching candlestick data from Binance for ${symbol}:`, error);
+      console.error(`Error fetching candlestick data from Binance for ${input.ticker}:`, error);
       // Fallback to mock data if API fails
       const data = [];
-      let lastClose = 68000 + (Math.random() - 0.5) * 5000;
-      const now = Date.now();
-      const intervalMs = (input.interval === '1h' ? 3600 : input.interval === '4h' ? 14400 : 86400) * 1000;
+      let lastClose = input.ticker === 'ETH' ? 3500 : input.ticker === 'SOL' ? 150 : 68000;
+      lastClose += (Math.random() - 0.5) * (lastClose * 0.2); // Initial random deviation
 
-      for (let i = 0; i < input.limit; i++) {
+      const now = Date.now();
+      const intervalInSeconds = input.interval.endsWith('h') ? parseInt(input.interval) * 3600 : parseInt(input.interval) * 86400;
+      const intervalMs = intervalInSeconds * 1000;
+
+      for (let i = 0; i < (input.limit || 100); i++) {
+        const timestamp = now - ( (input.limit || 100) - 1 - i) * intervalMs;
         const open = lastClose;
-        const close = open + (Math.random() - 0.5) * (open * 0.05);
-        const high = Math.max(open, close) * (1 + Math.random() * 0.02);
-        const low = Math.min(open, close) * (1 - Math.random() * 0.02);
-        const volume = Math.random() * 1000;
-        data.unshift({
-          timestamp: now - i * intervalMs,
-          open,
-          high,
-          low,
-          close,
-          volume,
+        const close = open + (Math.random() - 0.5) * (open * 0.05); // 5% volatility
+        const high = Math.max(open, close) * (1 + Math.random() * 0.02); // 2% wick
+        const low = Math.min(open, close) * (1 - Math.random() * 0.02); // 2% wick
+        const volume = Math.random() * 1000 + 100; // Realistic volume
+        data.push({
+          timestamp,
+          open: parseFloat(open.toFixed(2)),
+          high: parseFloat(high.toFixed(2)),
+          low: parseFloat(low.toFixed(2)),
+          close: parseFloat(close.toFixed(2)),
+          volume: parseFloat(volume.toFixed(2)),
         });
         lastClose = close;
       }
