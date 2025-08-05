@@ -85,25 +85,31 @@ export const getCryptoRating = ai.defineTool(
 
     const marketData = await Promise.all(marketDataPromises);
     
-    const {output} = await prompt({
-        marketData: JSON.stringify(marketData, null, 2),
-    });
+    try {
+      const {output} = await prompt({
+          marketData: JSON.stringify(marketData, null, 2),
+      });
 
-    if (!output) {
-      throw new Error("AI rating failed to produce a result.");
+      if (!output) {
+        throw new Error("AI rating failed to produce a result.");
+      }
+
+      // Augment the output with data that might not be perfectly returned by the model
+      const augmentedRatings = output.ratings.map(rating => {
+          const originalData = marketData.find(d => d.symbol === rating.symbol);
+          return {
+              ...rating,
+              price: originalData?.price ?? rating.price,
+              change24h: originalData?.change24h ?? rating.change24h,
+              volume24h: originalData?.volume24h ?? rating.volume24h,
+          }
+      });
+
+      return { ratings: augmentedRatings };
+    } catch (error) {
+      console.error("AI service failed to generate rating:", error);
+      // Return an empty array if the AI fails, so the frontend can handle it gracefully.
+      return { ratings: [] };
     }
-
-    // Augment the output with data that might not be perfectly returned by the model
-    const augmentedRatings = output.ratings.map(rating => {
-        const originalData = marketData.find(d => d.symbol === rating.symbol);
-        return {
-            ...rating,
-            price: originalData?.price ?? rating.price,
-            change24h: originalData?.change24h ?? rating.change24h,
-            volume24h: originalData?.volume24h ?? rating.volume24h,
-        }
-    });
-
-    return { ratings: augmentedRatings };
   }
 );
