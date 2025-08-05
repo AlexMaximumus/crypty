@@ -8,7 +8,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { ArrowUp, ArrowDown, Sparkles, TrendingUp } from 'lucide-react';
+import { ArrowUp, ArrowDown, Sparkles, TrendingUp, AlertTriangle } from 'lucide-react';
+import { Button } from './ui/button';
 
 const ratingStyles = {
     'Very Bullish': 'bg-green-500/10 text-green-400 border-green-500/20',
@@ -23,19 +24,21 @@ export function CryptoRating() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        async function fetchData() {
-            setIsLoading(true);
-            try {
-                const response = await getCryptoRating({ cryptocurrencies: ['BTC', 'ETH', 'SOL', 'XRP', 'DOGE'] });
-                setData(response);
-            } catch (e) {
-                console.error(e);
-                setError('Не удалось загрузить рейтинг криптовалют. Попробуйте обновить страницу.');
-            } finally {
-                setIsLoading(false);
-            }
+    const fetchData = async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const response = await getCryptoRating({ cryptocurrencies: ['BTC', 'ETH', 'SOL', 'XRP', 'DOGE'] });
+            setData(response);
+        } catch (e) {
+            console.error(e);
+            setError('Не удалось загрузить рейтинг. Возможная причина - отсутствующие API-ключи в настройках проекта на Vercel.');
+        } finally {
+            setIsLoading(false);
         }
+    }
+
+    useEffect(() => {
         fetchData();
     }, []);
 
@@ -70,7 +73,12 @@ export function CryptoRating() {
                             ))}
                         </div>
                     ) : error ? (
-                        <p className="text-destructive text-center">{error}</p>
+                        <div className="text-center text-destructive p-4 flex flex-col items-center gap-4">
+                            <AlertTriangle className="h-8 w-8" />
+                            <p className="font-semibold">Произошла ошибка</p>
+                            <p className="text-sm max-w-md">{error}</p>
+                            <Button onClick={fetchData}>Попробовать снова</Button>
+                        </div>
                     ) : (
                         <Table>
                             <TableHeader>
