@@ -55,7 +55,8 @@
     "tailwindcss-animate": "^1.0.7",
     "zod": "^3.24.2",
     "ccxt": "^4.3.56",
-    "ws": "^8.18.0"
+    "ws": "^8.18.0",
+    "socks-proxy-agent": "^8.0.4"
   },
   "devDependencies": {
     "@types/node": "^20",
