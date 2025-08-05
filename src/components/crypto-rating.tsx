@@ -84,8 +84,8 @@ export function CryptoRating() {
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Актив</TableHead>
-                                    <TableHead>Цена</TableHead>
-                                    <TableHead>Изм. (24ч)</TableHead>
+                                    <TableHead className="hidden sm:table-cell">Цена</TableHead>
+                                    <TableHead className="hidden sm:table-cell">Изм. (24ч)</TableHead>
                                     <TableHead className="text-right">Рейтинг ИИ</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -93,18 +93,18 @@ export function CryptoRating() {
                                 {data?.ratings?.sort((a,b) => b.volume24h - a.volume24h).map((item) => (
                                     <TableRow key={item.symbol}>
                                         <TableCell>
-                                            <div className="font-bold text-lg">{item.symbol}</div>
-                                            <p className="text-xs text-muted-foreground max-w-xs">{item.summary}</p>
+                                            <div className="font-bold text-base sm:text-lg">{item.symbol}</div>
+                                            <p className="text-xs text-muted-foreground max-w-[200px] sm:max-w-xs">{item.summary}</p>
                                         </TableCell>
-                                        <TableCell className="font-mono text-base">${item.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
-                                        <TableCell className={cn('font-mono text-base', item.change24h >= 0 ? 'text-green-400' : 'text-red-400')}>
+                                        <TableCell className="font-mono text-sm sm:text-base hidden sm:table-cell">${item.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                                        <TableCell className={cn('font-mono text-sm sm:text-base hidden sm:table-cell', item.change24h >= 0 ? 'text-green-400' : 'text-red-400')}>
                                             <div className="flex items-center gap-1">
                                                 {item.change24h >= 0 ? <ArrowUp size={16} /> : <ArrowDown size={16} />}
                                                 {item.change24h.toFixed(2)}%
                                             </div>
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            <Badge className={cn("text-sm", ratingStyles[item.rating])}>
+                                            <Badge className={cn("text-xs sm:text-sm", ratingStyles[item.rating])}>
                                                 {item.rating}
                                             </Badge>
                                         </TableCell>
