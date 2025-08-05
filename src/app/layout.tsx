@@ -22,7 +22,6 @@ const navItems = [
   { href: '/research', label: 'Исследования', icon: FlaskConical },
   { href: '/assistant', label: 'Ассистент', icon: MessageCircle },
   { href: '/tutorials', label: 'Руководства', icon: BookOpen },
-  { href: '/tech-stack', label: 'Технологии', icon: CodeXml },
 ];
 
 export default function RootLayout({
