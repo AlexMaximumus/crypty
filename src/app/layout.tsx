@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { BarChart, Bell, BookOpen, LayoutDashboard, MessageCircle, PanelLeft, FlaskConical, CandlestickChart } from 'lucide-react';
+import { BarChart, Bell, BookOpen, LayoutDashboard, MessageCircle, PanelLeft, FlaskConical, CandlestickChart, CodeXml } from 'lucide-react';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
@@ -22,6 +22,7 @@ const navItems = [
   { href: '/research', label: 'Исследования', icon: FlaskConical },
   { href: '/assistant', label: 'Ассистент', icon: MessageCircle },
   { href: '/tutorials', label: 'Руководства', icon: BookOpen },
+  { href: '/tech-stack', label: 'Технологии', icon: CodeXml },
 ];
 
 export default function RootLayout({
