@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { ArrowUp, ArrowDown, Sparkles, TrendingUp, AlertTriangle } from 'lucide-react';
+import { ArrowUp, ArrowDown, Sparkles, TrendingUp, AlertTriangle, KeyRound } from 'lucide-react';
 import { Button } from './ui/button';
 
 const ratingStyles = {
@@ -32,7 +32,7 @@ export function CryptoRating() {
             setData(response);
         } catch (e) {
             console.error(e);
-            setError('Не удалось загрузить рейтинг. Возможная причина - отсутствующие API-ключи в настройках проекта на Vercel.');
+            setError('Не удалось загрузить рейтинг. Вероятнее всего, отсутствуют API-ключи в настройках проекта на Vercel. Пожалуйста, добавьте переменные окружения GEMINI_API_KEY, BINANCE_API_KEY и BINANCE_API_SECRET.');
         } finally {
             setIsLoading(false);
         }
@@ -73,10 +73,17 @@ export function CryptoRating() {
                             ))}
                         </div>
                     ) : error ? (
-                        <div className="text-center text-destructive p-4 flex flex-col items-center gap-4">
+                        <div className="text-center text-destructive p-4 flex flex-col items-center gap-4 bg-destructive/5 rounded-lg">
                             <AlertTriangle className="h-8 w-8" />
-                            <p className="font-semibold">Произошла ошибка</p>
-                            <p className="text-sm max-w-md">{error}</p>
+                            <p className="font-semibold text-lg">Ошибка загрузки данных</p>
+                            <div className="flex items-start gap-3 text-sm max-w-md p-3 bg-card border rounded-md">
+                                <KeyRound className="h-6 w-6 text-yellow-400 mt-1 flex-shrink-0"/>
+                                <p className="text-left">
+                                    <strong className="text-foreground">Вероятная причина:</strong> Отсутствуют API-ключи в настройках проекта на Vercel.
+                                    <br />
+                                    <span className="text-muted-foreground">Для исправления, добавьте переменные окружения `GEMINI_API_KEY` и `BINANCE_API_KEY` в вашем проекте на Vercel и перезапустите деплой.</span>
+                                </p>
+                            </div>
                             <Button onClick={fetchData}>Попробовать снова</Button>
                         </div>
                     ) : (
